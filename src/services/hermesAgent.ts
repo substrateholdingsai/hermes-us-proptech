@@ -4,6 +4,7 @@ import { logger } from '../lib/logger';
 import { resolveSOSEntity } from './sos';
 import { resolvePropertyEquity } from './property';
 import { validateSecInvestor } from './sec';
+import { executeSkipTrace } from './skiptrace';
 
 export type IntelTaskType =
   | 'entity_resolution'
@@ -234,15 +235,22 @@ async function runSecValidation(ctx: TenantContext, params: IntelJobParams): Pro
 
 async function runSkipTrace(ctx: TenantContext, params: IntelJobParams): Promise<Record<string, unknown>> {
   const name = params.subjectName || 'Subject';
-  const phone = `+1${Math.floor(Math.random() * 9000000000 + 1000000000)}`;
-  const email = `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`;
-  const lineType = Math.random() > 0.3 ? 'mobile' : 'landline';
-  const dnc = Math.random() > 0.2 ? 'clean' : 'flagged';
-  const smtpVerified = Math.random() > 0.1;
-  const ai = await callWorkersAI(
-    ctx.env,
-    `Skip-trace US contact for "${name}". Phone ${phone}, email ${email}. DNC=${dnc}, line=${lineType}.`
-  );
+
+  const result = await executeSkipTrace(ctx, {
+    subjectName: name,
+    propertyAddress: params.propertyAddress,
+    customPrompt: params.customPrompt,
+  });
+
+  const primaryPhone = result.primaryPhone;
+  const primaryEmail = result.primaryEmail;
+
+  const phone = primaryPhone?.formattedE164 || '';
+  const email = primaryEmail?.email || '';
+  const lineType = primaryPhone?.lineType || 'unknown';
+  const dncStatus = primaryPhone?.dncStatus || 'unknown';
+  const smtpVerified = primaryEmail?.smtpVerified ? 1 : 0;
+
   const record = {
     id: newId('st'),
     tenant_id: ctx.tenantId,
@@ -251,10 +259,10 @@ async function runSkipTrace(ctx: TenantContext, params: IntelJobParams): Promise
     phone,
     email,
     line_type: lineType,
-    dnc_status: dnc,
-    smtp_verified: smtpVerified ? 1 : 0,
-    source: 'hermes-sandbox',
-    confidence: 0.85,
+    dnc_status: dncStatus,
+    smtp_verified: smtpVerified,
+    source: result.source,
+    confidence: result.confidenceScore,
   };
   try {
     await ctx.env.DB.prepare(
@@ -279,7 +287,24 @@ async function runSkipTrace(ctx: TenantContext, params: IntelJobParams): Promise
   } catch (err) {
     logger.warn('Persistencia skip_trace_records diferida:', { error: String(err) });
   }
-  return { ...record, aiInsights: ai };
+
+  // Update investor_profiles if subject exists
+  try {
+    const existing = await ctx.env.DB.prepare('SELECT id FROM investor_profiles WHERE tenant_id = ? AND full_name = ? LIMIT 1')
+      .bind(ctx.tenantId, name)
+      .first<{ id: string }>();
+    if (existing) {
+      await ctx.env.DB.prepare(
+        `UPDATE investor_profiles SET phone = ?, email = ?, line_type = ?, dnc_status = ?, email_verified = ?, updated_at = ? WHERE tenant_id = ? AND id = ?`
+      )
+        .bind(phone || null, email || null, lineType, dncStatus, smtpVerified, nowIso(), ctx.tenantId, existing.id)
+        .run();
+    }
+  } catch (err) {
+    logger.warn('Actualización de investor_profile diferida:', { error: String(err) });
+  }
+
+  return { ...record, skipTrace: result };
 }
 
 export async function dispatchIntelJob(ctx: TenantContext, params: IntelJobParams): Promise<IntelJobRecord> {

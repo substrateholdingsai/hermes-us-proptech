@@ -11,6 +11,11 @@ export interface Env {
   HERMES_SANDBOX?: DurableObjectNamespace;
   RENTCAST_API_KEY?: string;
   ATTOM_API_KEY?: string;
+  TWILIO_ACCOUNT_SID?: string;
+  TWILIO_AUTH_TOKEN?: string;
+  TELNYX_API_KEY?: string;
+  BATCHDATA_API_KEY?: string;
+  REALESTATEAPI_KEY?: string;
   APP_URL?: string;
   TZ?: string;
   CREDIT_COST_ENTITY_RESOLUTION?: string;

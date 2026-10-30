@@ -30,11 +30,8 @@ hermes-us-proptech/
     │   ├── credits.ts
     │   ├── hermesAgent.ts
     │   ├── sos/
-    │   └── property/
-    │       ├── types.ts
-    │       ├── aggregator.ts
-    │       ├── index.ts
-    │       └── counties/
+    │   ├── property/
+    │   └── sec/
     └── routes/
         └── intelligence.ts
 ```
@@ -46,11 +43,12 @@ hermes-us-proptech/
 - [x] D1/R2/AI/DO bindings y migraciones
 - [x] Auth multi-tenant + créditos
 - [x] SOS multi-state + UBO AI
-- [x] Property equity híbrido (aggregator + counties + AI)
+- [x] Property equity híbrido
+- [x] SEC/FINRA validation engine
 - [x] Typecheck OK
 
 ### Pendiente
-- [ ] Integraciones reales SEC/Carrier/DNC/SMTP
+- [ ] Skip-tracing real (carrier lookup, DNC, SMTP)
 - [ ] PDF/CRM
 - [ ] Frontend
 - [ ] Tests/CI
