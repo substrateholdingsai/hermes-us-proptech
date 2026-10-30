@@ -4,30 +4,50 @@ export function harvesterView(): string {
   const body = `
   <div class="mb-6">
     <h1 class="font-display text-2xl font-bold text-vektor-pri">VEKTOR Lead Harvester</h1>
-    <p class="text-vektor-sec text-sm mt-1">Automated institutional lead mining from SEC Form D, luxury cash buyers, and HNWI RIAs.</p>
+    <p class="text-vektor-sec text-sm mt-1">Automated institutional lead mining from SEC Form D, luxury cash buyers, HNWI RIAs, SIGER and RPPyC.</p>
   </div>
 
   <div class="bg-vektor-surface border border-vektor-line rounded-lg p-6 mb-6">
+    <div class="flex items-center gap-3 mb-4">
+      <button id="jurUS" onclick="setJurisdiction('US')" class="px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-bold text-sm">🇺🇸 United States (SEC / Deeds)</button>
+      <button id="jurMX" onclick="setJurisdiction('MX')" class="px-4 py-2 rounded border border-vektor-hi text-vektor-sec text-sm">🇲🇽 México (SIGER / RPPyC)</button>
+    </div>
     <div class="grid md:grid-cols-3 gap-6">
       <div>
         <label class="text-[11px] font-mono text-vektor-mut uppercase mb-2 block">Mining Channel</label>
-        <div class="space-y-2">
+        <div id="usSources" class="space-y-2">
           <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="source" value="sec_form_d" checked class="accent-cyan-400"> 💎 SEC Form D Syndications</label>
           <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="source" value="luxury_cash_buyers" class="accent-cyan-400"> 🏰 Luxury Cash Buyers</label>
           <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="source" value="ria_family_offices" class="accent-cyan-400"> 📈 HNWI RIAs (Form ADV)</label>
+        </div>
+        <div id="mxSources" class="space-y-2 hidden">
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="source" value="siger_sapi" checked class="accent-cyan-400"> SIGER 2.0 - S.A.P.I. & Family Offices</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="source" value="rppyc_luxury_acquisitions" class="accent-cyan-400"> RPPyC - Adquisiciones de Lujo (Cash Deals)</label>
+          <label class="flex items-center gap-2 text-sm cursor-pointer"><input type="radio" name="source" value="cnbv_qualified_investors" class="accent-cyan-400"> Inversionistas Calificados CNBV / AMIB</label>
         </div>
       </div>
       <div>
         <label class="text-[11px] font-mono text-vektor-mut uppercase mb-2 block">Jurisdiction</label>
         <select id="stateFilter" class="w-full bg-vektor-canvas border border-vektor-line rounded px-3 py-2 text-sm">
-          <option value="">All Jurisdictions</option>
-          <option value="FL">Florida (FL)</option>
-          <option value="TX">Texas (TX)</option>
-          <option value="DE">Delaware (DE)</option>
-          <option value="NV">Nevada (NV)</option>
-          <option value="WY">Wyoming (WY)</option>
-          <option value="NY">New York (NY)</option>
-          <option value="CA">California (CA)</option>
+          <optgroup id="usStates" label="United States">
+            <option value="">All Jurisdictions</option>
+            <option value="FL">Florida (FL)</option>
+            <option value="TX">Texas (TX)</option>
+            <option value="DE">Delaware (DE)</option>
+            <option value="NV">Nevada (NV)</option>
+            <option value="WY">Wyoming (WY)</option>
+            <option value="NY">New York (NY)</option>
+            <option value="CA">California (CA)</option>
+          </optgroup>
+          <optgroup id="mxStates" label="México" class="hidden">
+            <option value="">Todas las Entidades</option>
+            <option value="CDMX">CDMX</option>
+            <option value="NL">Nuevo León</option>
+            <option value="JAL">Jalisco</option>
+            <option value="QROO">Quintana Roo</option>
+            <option value="YUC">Yucatán</option>
+            <option value="BCS">Baja California Sur</option>
+          </optgroup>
         </select>
         <label class="text-[11px] font-mono text-vektor-mut uppercase mt-4 mb-2 block">Quantity</label>
         <select id="limitSelect" class="w-full bg-vektor-canvas border border-vektor-line rounded px-3 py-2 text-sm">
@@ -79,6 +99,35 @@ export function harvesterView(): string {
 
   <script>
   let lastBatch = null;
+  let currentJurisdiction = 'US';
+  function setJurisdiction(j) {
+    currentJurisdiction = j;
+    const usBtn = document.getElementById('jurUS');
+    const mxBtn = document.getElementById('jurMX');
+    const usSources = document.getElementById('usSources');
+    const mxSources = document.getElementById('mxSources');
+    const usStates = document.getElementById('usStates');
+    const mxStates = document.getElementById('mxStates');
+    if (j === 'US') {
+      usBtn.className = 'px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-bold text-sm';
+      mxBtn.className = 'px-4 py-2 rounded border border-vektor-hi text-vektor-sec text-sm';
+      usSources.classList.remove('hidden');
+      mxSources.classList.add('hidden');
+      usStates.classList.remove('hidden');
+      mxStates.classList.add('hidden');
+      const first = usSources.querySelector('input[name="source"]');
+      if (first) first.checked = true;
+    } else {
+      mxBtn.className = 'px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-bold text-sm';
+      usBtn.className = 'px-4 py-2 rounded border border-vektor-hi text-vektor-sec text-sm';
+      mxSources.classList.remove('hidden');
+      usSources.classList.add('hidden');
+      mxStates.classList.remove('hidden');
+      usStates.classList.add('hidden');
+      const first = mxSources.querySelector('input[name="source"]');
+      if (first) first.checked = true;
+    }
+  }
   async function runHarvest() {
     const source = document.querySelector('input[name="source"]:checked').value;
     const state = document.getElementById('stateFilter').value;
@@ -91,8 +140,11 @@ export function harvesterView(): string {
     radar.classList.remove('hidden');
     status.textContent = 'Mining institutional records...';
     try {
-      const body = { source, limit };
-      if (state) body.state = state;
+      const body = { source, limit, jurisdiction: currentJurisdiction };
+      if (state) {
+        if (currentJurisdiction === 'MX') body.entidadFederativa = state;
+        else body.state = state;
+      }
       const res = await api('/api/v1/intelligence/harvest', { method: 'POST', body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) {
@@ -119,8 +171,9 @@ export function harvesterView(): string {
     tbody.innerHTML = leads.map(l => {
       const badges = [];
       if (l.accreditationBadge) badges.push('<span class="badge-info px-1.5 py-0.5 rounded text-[10px]">' + l.accreditationBadge + '</span>');
-      if (l.dncStatus === 'clean') badges.push('<span class="badge-success px-1.5 py-0.5 rounded text-[10px]">DNC Clean</span>');
+      if (l.dncStatus === 'clean') badges.push('<span class="badge-success px-1.5 py-0.5 rounded text-[10px]">REPEP Clean</span>');
       if (l.isTcpaSafe) badges.push('<span class="badge-success px-1.5 py-0.5 rounded text-[10px]">TCPA Safe</span>');
+      if (l.mexicoMetadata && l.mexicoMetadata.folioMercantil) badges.push('<span class="badge-warning px-1.5 py-0.5 rounded text-[10px]">S.A.P.I. Verificada</span>');
       return '<tr class="hover:bg-vektor-surface-2/60 transition">' +
         '<td class="py-2.5 text-vektor-pri font-medium">' + l.primaryContactName + '</td>' +
         '<td class="py-2.5 text-vektor-sec">' + l.entityOrFundName + '</td>' +

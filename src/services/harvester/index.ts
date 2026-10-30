@@ -2,6 +2,8 @@ import type { TenantContext } from '../hermesAgent';
 import type { HarvestParams, HarvestBatchResult, HarvestedLeadItem } from './types';
 import { harvestSecFormD, harvestRiaFamilyOffices } from './secHarvester';
 import { harvestLuxuryCashBuyers } from './luxuryCashHarvester';
+import { harvestSigerSapi, harvestCnbvQualified } from './mexico/sigerHarvester';
+import { harvestRppycLuxury } from './mexico/rppycHarvester';
 import { newId, nowIso } from '../db';
 import { deductCredits } from '../credits';
 
@@ -21,6 +23,15 @@ export async function harvestLeads(
       break;
     case 'ria_family_offices':
       leads = await harvestRiaFamilyOffices(ctx, { ...params, limit });
+      break;
+    case 'siger_sapi':
+      leads = await harvestSigerSapi(ctx, { ...params, limit });
+      break;
+    case 'rppyc_luxury_acquisitions':
+      leads = await harvestRppycLuxury(ctx, { ...params, limit });
+      break;
+    case 'cnbv_qualified_investors':
+      leads = await harvestCnbvQualified(ctx, { ...params, limit });
       break;
   }
 

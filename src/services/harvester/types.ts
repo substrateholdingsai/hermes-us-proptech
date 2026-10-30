@@ -1,4 +1,12 @@
-export type HarvestSource = 'sec_form_d' | 'luxury_cash_buyers' | 'ria_family_offices';
+import type { MexicoLeadMetadata } from './mexico/types';
+
+export type HarvestSource =
+  | 'sec_form_d'
+  | 'luxury_cash_buyers'
+  | 'ria_family_offices'
+  | 'siger_sapi'
+  | 'rppyc_luxury_acquisitions'
+  | 'cnbv_qualified_investors';
 
 export interface HarvestParams {
   source: HarvestSource;
@@ -6,6 +14,9 @@ export interface HarvestParams {
   state?: string;
   minAmountDollars?: number;
   autoEnrich?: boolean;
+  jurisdiction?: 'US' | 'MX';
+  entidadFederativa?: 'CDMX' | 'NL' | 'JAL' | 'QROO' | 'YUC' | 'BCS';
+  minAmountMxn?: number;
 }
 
 export interface HarvestedLeadItem {
@@ -24,6 +35,7 @@ export interface HarvestedLeadItem {
   email: string;
   isTcpaSafe: boolean;
   harvestedAt: string;
+  mexicoMetadata?: MexicoLeadMetadata;
 }
 
 export interface HarvestBatchResult {
