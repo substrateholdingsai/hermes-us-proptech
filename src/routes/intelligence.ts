@@ -4,6 +4,8 @@ import { dispatchIntelJob } from '../services/hermesAgent';
 import { logger } from '../lib/logger';
 import { authMiddleware, requireScope } from '../middleware/auth';
 import { getTenantBalance, hasSufficientCredits, deductCredits } from '../services/credits';
+import { resolveSOSEntity } from '../services/sos';
+import type { USStateCode } from '../services/sos/types';
 
 export const intelligence = new Hono<{ Bindings: Env }>();
 
@@ -269,6 +271,22 @@ intelligence.get('/audit-logs', requireScope('intel:read'), async (c) => {
     .bind(tenant.id, limit, offset)
     .all();
   return c.json({ ok: true, items: results ?? [], limit, offset });
+});
+
+intelligence.get('/sos/resolve', requireScope('intel:read'), async (c) => {
+  const entityName = c.req.query('entityName');
+  const state = c.req.query('state') as USStateCode;
+  if (!entityName || !state) {
+    return c.json({ ok: false, error: 'missing_params', message: 'entityName and state are required' }, 400);
+  }
+  try {
+    const result = await resolveSOSEntity(c.env, { entityName, state, tenantId: c.get('tenant').id });
+    return c.json({ ok: true, result });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error('Error SOS resolve:', { error: msg });
+    return c.json({ ok: false, error: msg }, 500);
+  }
 });
 
 intelligence.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-intel' }));

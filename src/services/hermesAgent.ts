@@ -1,6 +1,7 @@
 import type { Env } from '../types/env';
 import { newId, nowIso, parseJson } from './db';
 import { logger } from '../lib/logger';
+import { resolveSOSEntity } from './sos';
 
 export type IntelTaskType =
   | 'entity_resolution'
@@ -86,23 +87,22 @@ async function notifySandbox(env: Env, jobId: string, params: IntelJobParams): P
 
 async function runEntityResolution(ctx: TenantContext, params: IntelJobParams): Promise<Record<string, unknown>> {
   const entityName = params.entityName || params.subjectName || 'Unknown Entity';
-  const state = params.state || 'DE';
-  const ai = await callWorkersAI(
-    ctx.env,
-    `Resolve the Ultimate Beneficial Owner (UBO) behind the US LLC/Trust "${entityName}" formed in ${state}. Identify Managing Members, Registered Agent and SOS filing. Return JSON.`
-  );
+  const state = (params.state as 'TX' | 'FL' | 'WY' | 'DE' | 'NV') || 'DE';
+
+  const result = await resolveSOSEntity(ctx.env, { entityName, state, tenantId: ctx.tenantId });
+
   const record = {
     id: newId('ent'),
     tenant_id: ctx.tenantId,
-    entity_name: entityName,
-    entity_type: 'llc',
-    state_of_formation: state,
-    registered_agent: `Registered Agent of ${entityName}`,
-    managers_json: JSON.stringify([{ role: 'Managing Member', name: 'Resolved via SOS' }]),
-    ubo_name: `UBO of ${entityName}`,
-    sos_filing_number: `SOS-${state}-${Date.now()}`,
-    status: 'resolved',
-    raw_payload: JSON.stringify({ ai }),
+    entity_name: result.entityName,
+    entity_type: result.entityType,
+    state_of_formation: result.state,
+    registered_agent: result.registeredAgent.name,
+    managers_json: JSON.stringify(result.officers),
+    ubo_name: result.uboCandidates.length ? result.uboCandidates.join(', ') : result.registeredAgent.name,
+    sos_filing_number: result.filingNumber,
+    status: result.status === 'unknown' ? 'pending' : 'resolved',
+    raw_payload: JSON.stringify(result),
   };
   try {
     await ctx.env.DB.prepare(
@@ -128,7 +128,7 @@ async function runEntityResolution(ctx: TenantContext, params: IntelJobParams): 
   } catch (err) {
     logger.warn('Persistencia entity_lookups diferida:', { error: String(err) });
   }
-  return { ...record, aiInsights: ai };
+  return { ...record, sos: result };
 }
 
 async function runPropertyEquity(ctx: TenantContext, params: IntelJobParams): Promise<Record<string, unknown>> {
