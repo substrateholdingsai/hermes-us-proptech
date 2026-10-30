@@ -69,6 +69,11 @@ export function harvesterView(): string {
     <div class="h-full bg-vektor-cyan animate-pulse" style="width:100%"></div>
   </div>
 
+  <div class="bg-vektor-surface border border-vektor-line rounded-lg p-5 mb-6">
+    <h3 class="font-display font-bold text-sm text-vektor-pri mb-3">Automated Recurring Sweeps (Cron)</h3>
+    <div id="schedulesList" class="space-y-3"></div>
+  </div>
+
   <div class="bg-vektor-surface border border-vektor-line rounded-lg p-5">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-display font-bold text-sm text-vektor-pri">Harvested Leads</h3>
@@ -186,7 +191,44 @@ export function harvesterView(): string {
       '</tr>';
     }).join('');
   }
-  function exportCsv() {
+  async function loadSchedules() {
+    try {
+      const res = await api('/api/v1/intelligence/harvest/schedules');
+      const data = await res.json();
+      const list = document.getElementById('schedulesList');
+      const schedules = data.schedules || [];
+      if (!schedules.length) {
+        list.innerHTML = '<div class="text-vektor-mut text-sm">No automated sweeps configured.</div>';
+        return;
+      }
+      list.innerHTML = schedules.map(s => {
+        return '<div class="bg-vektor-canvas border border-vektor-line rounded p-4 flex items-center justify-between">' +
+          '<div>' +
+            '<div class="font-display font-semibold text-vektor-pri">' + (s.name || 'Scheduled Harvest') + '</div>' +
+            '<div class="text-xs text-vektor-sec mt-1">Source: ' + s.source + ' · ' + s.jurisdiction + ' · ' + (s.state || 'All') + '</div>' +
+            '<div class="text-[11px] text-vektor-mut mt-1 font-mono">CRON ACTIVE: ' + s.cron_expression + ' → Syncing to CRM</div>' +
+          '</div>' +
+          '<button onclick="runSchedule(\'' + s.id + '\')" class="px-3 py-1.5 text-xs border border-vektor-hi rounded text-vektor-sec hover:text-vektor-cyan">RUN NOW</button>' +
+        '</div>';
+      }).join('');
+    } catch (e) {
+      console.warn('schedules load deferred', e);
+    }
+  }
+  async function runSchedule(id) {
+    const status = document.getElementById('harvestStatus');
+    status.textContent = 'Running scheduled sweep...';
+    try {
+      const res = await api('/api/v1/intelligence/harvest/schedules/' + id + '/run', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) { status.textContent = data.error || 'Run failed'; return; }
+      status.textContent = 'Sweep completed: ' + (data.batch?.leads?.length || 0) + ' leads';
+      if (data.batch?.leads) renderResults(data.batch.leads);
+    } catch (e) {
+      status.textContent = 'Error: ' + e.message;
+    }
+  }
+  loadSchedules();
     if (!lastBatch) return;
     const rows = [['Contact','Entity','Role','Jurisdiction','DealSize','Phone','Email','TCPA']];
     lastBatch.leads.forEach(l => rows.push([l.primaryContactName,l.entityOrFundName,l.contactRole,l.jurisdiction,l.dealSizeFormatted,l.phone,l.email,l.isTcpaSafe]));

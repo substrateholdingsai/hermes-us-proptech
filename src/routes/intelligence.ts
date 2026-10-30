@@ -12,6 +12,7 @@ import { syncLeadToCrm, normalizeLead } from '../services/crm';
 import type { NormalizedLead, CrmSyncConfig } from '../services/crm/types';
 import { harvestLeads } from '../services/harvester';
 import type { HarvestParams } from '../services/harvester/types';
+import { newId } from '../services/db';
 
 export const intelligence = new Hono<{ Bindings: Env }>();
 
@@ -417,6 +418,118 @@ intelligence.post('/harvest', requireScope('intel:write'), async (c) => {
     logger.error('Error harvest:', { error: msg });
     return c.json({ ok: false, error: msg }, 500);
   }
+});
+
+intelligence.get('/harvest/schedules', requireScope('intel:read'), async (c) => {
+  const tenant = c.get('tenant');
+  const { results } = await c.env.DB.prepare('SELECT * FROM harvest_schedules WHERE tenant_id = ? ORDER BY created_at DESC').bind(tenant.id).all();
+  return c.json({ ok: true, schedules: results ?? [] });
+});
+
+intelligence.post('/harvest/schedules', requireScope('intel:write'), async (c) => {
+  let body: any = {};
+  try { body = await c.req.json(); } catch { body = {}; }
+  const tenant = c.get('tenant');
+  const id = newId('sched');
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO harvest_schedules (id, tenant_id, name, cron_expression, source, jurisdiction, state, min_amount_dollars, limit_per_run, auto_sync_crm, is_active, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id,
+    tenant.id,
+    body.name || 'Scheduled Harvest',
+    body.cron_expression || '0 12 * * 1',
+    body.source || 'sec_form_d',
+    body.jurisdiction || 'US',
+    body.state || null,
+    body.min_amount_dollars ?? 1500000,
+    body.limit_per_run ?? 10,
+    body.auto_sync_crm === false ? 0 : 1,
+    body.is_active === false ? 0 : 1,
+    now,
+    now
+  ).run();
+  return c.json({ ok: true, schedule: { id, tenant_id: tenant.id, name: body.name || 'Scheduled Harvest' } });
+});
+
+intelligence.post('/harvest/schedules/:id/run', requireScope('intel:write'), async (c) => {
+  const tenant = c.get('tenant');
+  const id = c.req.param('id');
+  const row = await c.env.DB.prepare('SELECT * FROM harvest_schedules WHERE id = ? AND tenant_id = ?').bind(id, tenant.id).first();
+  if (!row) return c.json({ ok: false, error: 'not_found' }, 404);
+  const schedule: any = row;
+  const ctx = { tenantId: tenant.id, env: c.env };
+  const params: any = {
+    source: schedule.source,
+    limit: Number(schedule.limit_per_run) || 10,
+    jurisdiction: schedule.jurisdiction === 'MX' ? 'MX' : 'US',
+    minAmountDollars: schedule.min_amount_dollars ? Number(schedule.min_amount_dollars) : undefined,
+    autoEnrich: true,
+  };
+  if (schedule.jurisdiction === 'MX') params.entidadFederativa = schedule.state;
+  else params.state = schedule.state || undefined;
+
+  const batch = await harvestLeads(ctx, params);
+
+  if (schedule.auto_sync_crm === 1 && batch.leads.length > 0) {
+    try {
+      const crmRes = await c.env.DB.prepare('SELECT * FROM crm_integrations WHERE tenant_id = ? AND is_active = 1').bind(tenant.id).all();
+      const configs: CrmSyncConfig[] = (crmRes.results ?? []).map((r: any) => ({
+        provider: String(r.provider) as CrmSyncConfig['provider'],
+        endpointUrl: r.endpoint_url ? String(r.endpoint_url) : r.endpointUrl ? String(r.endpointUrl) : undefined,
+        apiKey: r.api_key ? String(r.api_key) : r.apiKey ? String(r.apiKey) : undefined,
+        secret: r.secret ? String(r.secret) : undefined,
+        isActive: true,
+      }));
+      if (configs.length > 0) {
+        for (const lead of batch.leads) {
+          const normalized: NormalizedLead = {
+            fullName: lead.primaryContactName || lead.entityOrFundName,
+            email: lead.email,
+            phone: lead.phone,
+            lineType: (lead.lineType === 'mobile' || lead.lineType === 'landline' || lead.lineType === 'voip') ? lead.lineType : 'unknown',
+            dncStatus: lead.dncStatus === 'clean' ? 'clean' : 'flagged',
+            state: lead.jurisdiction,
+            investorType: lead.accreditationBadge === 'Qualified Purchaser' ? 'qualified_purchaser' : 'accredited',
+            uboName: lead.entityOrFundName,
+            source: 'VEKTOR Harvester',
+          };
+          await syncLeadToCrm(ctx, normalized, configs);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const now = new Date().toISOString();
+  await c.env.DB.prepare('UPDATE harvest_schedules SET last_run_at = ?, last_status = ? WHERE id = ?').bind(now, 'success', id).run();
+
+  return c.json({ ok: true, batch });
+});
+
+intelligence.post('/crm/integrations', requireScope('intel:write'), async (c) => {
+  let body: any = {};
+  try { body = await c.req.json(); } catch { body = {}; }
+  const tenant = c.get('tenant');
+  const id = newId('crm');
+  const now = new Date().toISOString();
+  await c.env.DB.prepare(
+    `INSERT INTO crm_integrations (id, tenant_id, provider, endpoint_url, api_key, secret, is_active, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(
+    id,
+    tenant.id,
+    body.provider || 'webhook',
+    body.endpointUrl || body.endpoint_url || null,
+    body.apiKey || body.api_key || null,
+    body.secret || null,
+    body.isActive === false ? 0 : 1,
+    now,
+    now
+  ).run();
+  return c.json({ ok: true, integration: { id, provider: body.provider || 'webhook' } });
 });
 
 intelligence.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-intel' }));

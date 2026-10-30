@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://json.schemastore.org/wrangler.jsonc",
   "name": "hermes-us-proptech",
   "main": "src/index.ts",
@@ -38,4 +38,4 @@
     { "tag": "v1", "new_sqlite_classes": ["HermesSandboxDO"] }
   ],
   "observability": { "enabled": true }
-}
+,"triggers":{"crons":["0 12 * * 1"]}}

@@ -5,6 +5,7 @@ import { dashboard, serveVektorAsset } from './routes/dashboard';
 import { landingView } from './views/landing';
 import { docsRouter } from './routes/docs';
 import { openApiSpec } from './docs/openapi';
+import { runScheduledHarvester } from './services/harvester/scheduler';
 import { HermesSandboxDO } from './durable/hermes-sandbox';
 
 export { HermesSandboxDO };
@@ -34,4 +35,7 @@ app.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-proptech' }));
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
 export { app };
+(app as any).scheduled = async (_event: unknown, env: Env, ctx: { waitUntil: (p: Promise<any>) => void }) => {
+  ctx.waitUntil(runScheduledHarvester(env));
+};
 export default app;
