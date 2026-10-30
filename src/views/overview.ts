@@ -20,8 +20,8 @@ export function overviewView(): string {
     </div>
     <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
       <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Available Credits</div>
-      <div class="font-mono text-2xl text-vektor-cyan font-bold mt-1" id="credits">—</div>
-      <div class="text-[11px] text-vektor-sec mt-1 font-mono" id="creditsDesc">tenant: default</div>
+      <div class="font-mono text-2xl text-vektor-cyan font-bold mt-1" id="credits">1,000</div>
+      <div class="text-[11px] text-vektor-sec mt-1 font-mono" id="creditsDesc">workspace: default · starter</div>
     </div>
   </div>
 
@@ -30,22 +30,33 @@ export function overviewView(): string {
       <label class="font-mono text-xs text-vektor-cyan tracking-wider uppercase flex items-center gap-2">
         <span class="w-1.5 h-1.5 rounded-full bg-vektor-cyan"></span> UNIFIED PROBE LAUNCHPAD
       </label>
-      <span class="text-[11px] text-vektor-mut font-mono">Press ENTER to launch</span>
+      <span class="text-[11px] text-vektor-mut font-mono">Press ENTER to launch probe</span>
     </div>
     <div class="flex gap-2">
       <input id="probeInput" autofocus 
         onkeydown="if(event.key==='Enter')probe();" 
-        placeholder="Enter target name, US street address, LLC/Trust name or phone number..." 
+        placeholder="Enter LLC name, street address, target name, CIK, phone or APN..." 
         class="flex-1 bg-vektor-canvas border border-vektor-line rounded px-4 py-3 text-sm focus:border-vektor-cyan outline-none transition font-sans text-vektor-pri" />
       <button onclick="probe()" class="px-6 py-3 bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-sm tracking-wide rounded transition flex items-center gap-2">
         <span>PROBE TARGET</span>
       </button>
     </div>
+    <div class="flex items-center gap-3 mt-3 text-[11px] text-vektor-mut">
+      <span>Quick examples:</span>
+      <button onclick="quickProbe('Apex Capital Partners LLC')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">Apex Capital Partners LLC (SOS)</button>
+      <span>·</span>
+      <button onclick="quickProbe('742 Evergreen Terrace, Miami FL')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">742 Evergreen Terrace (Equity)</button>
+      <span>·</span>
+      <button onclick="quickProbe('David S. Miller')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">David S. Miller (SEC/FINRA)</button>
+    </div>
   </div>
 
   <div class="bg-vektor-surface border border-vektor-line rounded p-4">
     <div class="flex items-center justify-between mb-3">
-      <h3 class="font-display font-bold text-sm text-vektor-pri tracking-wide">Recent Investigated Hits</h3>
+      <div>
+        <h3 class="font-display font-bold text-sm text-vektor-pri tracking-wide">Recent Investigated Hits</h3>
+        <p class="text-[11px] text-vektor-sec">Real-time audit log of resolved entities, properties, and skip-trace targets</p>
+      </div>
       <a href="/dashboard/explorer" class="text-xs text-vektor-cyan hover:underline font-mono">View All Explorer →</a>
     </div>
     <div class="overflow-x-auto">
@@ -73,25 +84,32 @@ export function overviewView(): string {
       const cr = await api('/api/v1/intelligence/tenant/credits');
       if (cr.ok) {
         const d = await cr.json();
-        document.getElementById('credits').textContent = (d.balance || 0).toLocaleString();
-        if (d.tenant) {
-          document.getElementById('creditsDesc').textContent = 'plan: ' + (d.tenant.plan || 'starter').toUpperCase();
-        }
+        const bal = d.balance !== undefined ? d.balance : 1000;
+        document.getElementById('credits').textContent = Number(bal).toLocaleString();
+        const sideEl = document.getElementById('sidebarCredits');
+        if (sideEl) sideEl.textContent = Number(bal).toLocaleString();
+        const barEl = document.getElementById('sidebarCreditsBar');
+        if (barEl) barEl.style.width = Math.min(100, Math.round((bal / 5000) * 100)) + '%';
       }
-    } catch {}
+    } catch (e) {
+      console.warn('Credits load deferred:', e);
+    }
 
     try {
       const [tr, er] = await Promise.all([
         api('/api/v1/intelligence/skip-trace'),
         api('/api/v1/intelligence/entities')
       ]);
-      const tData = tr.ok ? await tr.json() : { records: [] };
-      const eData = er.ok ? await er.json() : { records: [] };
+      const tData = tr.ok ? await tr.json() : {};
+      const eData = er.ok ? await er.json() : {};
       
+      const targetItems = tData.items || tData.records || [];
+      const entityItems = eData.items || eData.records || [];
+
       const hitsEl = document.getElementById('hits');
       const allHits = [];
 
-      (tData.records || []).forEach(r => {
+      targetItems.forEach(r => {
         allHits.push({
           name: r.subject_name || 'Subject',
           type: 'SKIP-TRACE',
@@ -102,7 +120,7 @@ export function overviewView(): string {
         });
       });
 
-      (eData.records || []).forEach(e => {
+      entityItems.forEach(e => {
         allHits.push({
           name: e.entity_name || 'Corporate Entity',
           type: 'SOS / LLC',
@@ -114,7 +132,11 @@ export function overviewView(): string {
       });
 
       if (!allHits.length) {
-        hitsEl.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-vektor-mut">No probe hits logged yet. Use the Launchpad input above to run an analysis.</td></tr>';
+        hitsEl.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-vektor-mut">' +
+          '<div class="text-vektor-pri font-medium mb-1">No investigated targets logged yet in workspace</div>' +
+          '<div class="text-xs text-vektor-sec mb-3">Launch your first probe in the Launchpad to resolve an LLC, property, or contact.</div>' +
+          '<a href="/dashboard/launchpad" class="inline-block px-3 py-1.5 text-xs bg-vektor-cyan text-vektor-void font-bold rounded">Open Investigative Probes →</a>' +
+          '</td></tr>';
         return;
       }
 
@@ -133,7 +155,7 @@ export function overviewView(): string {
       }).join('');
 
     } catch (e) {
-      document.getElementById('hits').innerHTML = '<tr><td colspan="6" class="py-4 text-center text-vektor-red">Failed to load hits stream</td></tr>';
+      document.getElementById('hits').innerHTML = '<tr><td colspan="6" class="py-4 text-center text-vektor-red">Failed to load hits stream. Verify connection.</td></tr>';
     }
   }
 
@@ -141,6 +163,10 @@ export function overviewView(): string {
     const v = document.getElementById('probeInput').value.trim();
     if (!v) return;
     window.location = '/dashboard/launchpad?q=' + encodeURIComponent(v);
+  }
+
+  function quickProbe(val) {
+    window.location = '/dashboard/launchpad?q=' + encodeURIComponent(val);
   }
 
   loadOverview();
