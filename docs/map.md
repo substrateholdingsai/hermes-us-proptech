@@ -9,8 +9,7 @@ hermes-us-proptech/
 ├── package.json
 ├── tsconfig.json
 ├── .gitignore
-├── docs/
-│   └── map.md
+├── docs/map.md
 ├── migrations/
 │   ├── 0001_init.sql
 │   └── 0002_tenants_and_credits.sql
@@ -29,7 +28,16 @@ hermes-us-proptech/
     ├── services/
     │   ├── db.ts
     │   ├── credits.ts
-    │   └── hermesAgent.ts
+    │   ├── hermesAgent.ts
+    │   └── sos/
+    │       ├── types.ts
+    │       ├── common.ts
+    │       ├── florida.ts
+    │       ├── texas.ts
+    │       ├── wyoming.ts
+    │       ├── delaware.ts
+    │       ├── nevada.ts
+    │       └── index.ts
     └── routes/
         └── intelligence.ts
 ```
@@ -37,22 +45,16 @@ hermes-us-proptech/
 ## Checklist
 
 ### Completado
-- [x] Repositorio independiente + commits base/final
-- [x] `wrangler.jsonc` (D1/R2/AI/DO) y D1 remoto creado
-- [x] Migraciones `0001_init`, `0002_tenants_and_credits` (local + remoto)
-- [x] R2 bucket `hermes-intel-snapshots`
-- [x] Dockerfile sandbox
-- [x] Orquestador `hermesAgent.ts` (entity/property/sec/skip-trace)
-- [x] Autenticación multi-tenant (API keys SHA-256, scopes)
-- [x] Ledger de créditos (balance, transacciones, deducción)
-- [x] Rutas intelligence protegidas + GET de consulta
+- [x] Scaffolding + git
+- [x] D1/R2/AI/DO bindings y migraciones
+- [x] Auth multi-tenant + créditos
+- [x] SOS multi-state (TX, FL, WY, DE, NV) + UBO AI
 - [x] Typecheck OK
 
 ### Pendiente
-- [ ] Autenticación avanzada (rotación/revocación UI)
-- [ ] Integraciones reales SOS/County/SEC/Carrier/DNC/SMTP
-- [ ] Exportación PDF a R2 y CRM
-- [ ] Frontend/dashboard
-- [ ] Tests y CI/CD
-- [ ] Deploy producción
+- [ ] Integraciones reales County/SEC/Carrier/DNC/SMTP
+- [ ] PDF/CRM
+- [ ] Frontend
+- [ ] Tests/CI
+- [ ] Deploy
 - [ ] OpenAPI

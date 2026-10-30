@@ -2,6 +2,7 @@ import type { Env } from '../types/env';
 import { newId, nowIso, parseJson } from './db';
 import { logger } from '../lib/logger';
 import { resolveSOSEntity } from './sos';
+import { resolvePropertyEquity } from './property';
 
 export type IntelTaskType =
   | 'entity_resolution'
@@ -133,27 +134,22 @@ async function runEntityResolution(ctx: TenantContext, params: IntelJobParams): 
 
 async function runPropertyEquity(ctx: TenantContext, params: IntelJobParams): Promise<Record<string, unknown>> {
   const address = params.propertyAddress || 'Unknown Address';
-  const assessed = Math.round(Math.random() * 400000 + 100000) * 100;
-  const market = Math.round(assessed * 1.15);
-  const mortgage = Math.round(market * 0.45);
-  const equity = market - mortgage;
-  const tax = Math.round(assessed * 0.012);
-  const ai = await callWorkersAI(
-    ctx.env,
-    `Estimate equity and investment profile for US property at ${address}. Market value ~${market / 100}, mortgage ~${mortgage / 100}.`
-  );
+  const state = params.state || 'US';
+
+  const result = await resolvePropertyEquity(ctx, { propertyAddress: address, state });
+
   const record = {
     id: newId('prop'),
     tenant_id: ctx.tenantId,
-    address,
-    county: params.state || 'County',
-    state: params.state || 'US',
-    parcel_id: `PARCEL-${Date.now()}`,
-    assessed_value_cents: assessed,
-    market_value_cents: market,
-    mortgage_balance_cents: mortgage,
-    equity_cents: equity,
-    tax_amount_cents: tax,
+    address: result.address,
+    county: result.county,
+    state: result.state,
+    parcel_id: result.parcelId,
+    assessed_value_cents: result.assessedValueCents,
+    market_value_cents: result.marketValueCents,
+    mortgage_balance_cents: result.mortgageBalanceCents,
+    equity_cents: result.equityCents,
+    tax_amount_cents: result.taxAmountCents,
   };
   try {
     await ctx.env.DB.prepare(
@@ -179,7 +175,27 @@ async function runPropertyEquity(ctx: TenantContext, params: IntelJobParams): Pr
   } catch (err) {
     logger.warn('Persistencia properties diferida:', { error: String(err) });
   }
-  return { ...record, aiInsights: ai };
+
+  // If owner is entity/trust, link to entity_lookups if exists (best effort)
+  if (result.ownerType === 'entity' || result.ownerType === 'trust') {
+    try {
+      const existing = await ctx.env.DB.prepare('SELECT id FROM entity_lookups WHERE tenant_id = ? AND entity_name = ? LIMIT 1')
+        .bind(ctx.tenantId, result.ownerName)
+        .first<{ id: string }>();
+      if (!existing) {
+        await ctx.env.DB.prepare(
+          `INSERT INTO entity_lookups (id, tenant_id, entity_name, entity_type, state_of_formation, registered_agent, status, raw_payload, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)`
+        )
+          .bind(newId('ent'), ctx.tenantId, result.ownerName, result.ownerType === 'trust' ? 'trust' : 'llc', result.state, 'Pending resolution', JSON.stringify({ source: 'property_owner' }), nowIso(), nowIso())
+          .run();
+      }
+    } catch (err) {
+      logger.warn('Vinculación de entidad propietaria diferida:', { error: String(err) });
+    }
+  }
+
+  return { ...record, property: result };
 }
 
 async function runSecValidation(ctx: TenantContext, params: IntelJobParams): Promise<Record<string, unknown>> {

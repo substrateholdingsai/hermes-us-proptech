@@ -9,6 +9,8 @@ export interface Env {
   DB: D1Database;
   R2: R2Bucket;
   HERMES_SANDBOX?: DurableObjectNamespace;
+  RENTCAST_API_KEY?: string;
+  ATTOM_API_KEY?: string;
   APP_URL?: string;
   TZ?: string;
   CREDIT_COST_ENTITY_RESOLUTION?: string;
