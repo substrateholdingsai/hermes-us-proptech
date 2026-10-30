@@ -5,6 +5,12 @@ import { searchEdgar } from './edgar';
 import { searchFinra } from './finra';
 import { logger } from '../../lib/logger';
 
+export function classifyInvestorType(formADVData: { regulatoryAumDollars: number } | null, hasSecFormD: boolean, finraRecord: { isAccreditedByLicense: boolean } | null): 'unknown' | 'accredited' | 'qualified_purchaser' {
+  if (formADVData && formADVData.regulatoryAumDollars > 5_000_000) return 'qualified_purchaser';
+  if (hasSecFormD || (finraRecord && finraRecord.isAccreditedByLicense)) return 'accredited';
+  return 'unknown';
+}
+
 export async function validateSecInvestor(
   ctx: TenantContext,
   params: { subjectName?: string; entityName?: string; customPrompt?: string }
@@ -34,11 +40,7 @@ export async function validateSecInvestor(
   const hasSecFormADV = formADVData !== null;
 
   let investorType: SecValidationResult['investorType'] = 'unknown';
-  if (formADVData && formADVData.regulatoryAumDollars > 5_000_000) {
-    investorType = 'qualified_purchaser';
-  } else if (hasSecFormD || (finraRecord && finraRecord.isAccreditedByLicense)) {
-    investorType = 'accredited';
-  }
+  investorType = classifyInvestorType(formADVData, hasSecFormD, finraRecord);
 
   let accreditationConfidence = 0.3;
   if (investorType === 'qualified_purchaser') accreditationConfidence = 0.95;
@@ -86,3 +88,5 @@ export async function validateSecInvestor(
     verdictSummary,
   };
 }
+
+export const classifyInvestor = classifyInvestorType;

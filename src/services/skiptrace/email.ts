@@ -5,7 +5,7 @@ const DISPOSABLE_DOMAINS = new Set([
   'trashmail.com', 'dispostable.com', 'fakeinbox.com', 'sharklasers.com', 'getnada.com',
 ]);
 
-function isValidSyntax(email: string): boolean {
+export function isValidSyntax(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
@@ -44,3 +44,19 @@ export async function validateEmail(email: string): Promise<EmailValidation> {
     smtpVerified: hasMxRecords && !isDisposable,
   };
 }
+
+export function isDisposableDomain(domain: string): boolean {
+  const DISPOSABLE = new Set(['mailinator.com','guerrillamail.com','tempmail.com','10minutemail.com','yopmail.com','trashmail.com','dispostable.com','fakeinbox.com','sharklasers.com','getnada.com']);
+  return DISPOSABLE.has(domain.toLowerCase());
+}
+
+export const isValidEmail = isValidSyntax;
+export function isDisposable(emailOrDomain: string): boolean {
+  const domain = emailOrDomain.includes('@') ? emailOrDomain.split('@')[1] : emailOrDomain;
+  return isDisposableDomain(domain || '');
+}
+
+export const isValidEmailSyntax = isValidSyntax;
+
+export const isDisposableEmail = isDisposable;
+export const isEmailValid = isValidSyntax;

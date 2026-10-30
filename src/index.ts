@@ -27,6 +27,5 @@ app.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-proptech' }));
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
-export default {
-  fetch: app.fetch,
-} satisfies ExportedHandler<Env>;
+export { app };
+export default app;

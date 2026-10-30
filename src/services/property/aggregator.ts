@@ -123,7 +123,7 @@ export async function tryAggregator(
   return null;
 }
 
-function estimateMortgage(marketValueCents: number, lastSalePriceCents: number | null, lastSaleDate: string | null): number {
+export function estimateMortgage(marketValueCents: number, lastSalePriceCents: number | null, lastSaleDate: string | null): number {
   if (!lastSalePriceCents || lastSalePriceCents <= 0) return 0;
   // initial loan ~80% LTV
   let principal = Math.round(lastSalePriceCents * 0.8);

@@ -14,7 +14,18 @@ export async function searchEdgar(query: string): Promise<{ formD: FormDFiling[]
       const s = h?._source || h || {};
       const formType = String(s.form_type || s.forms || s.form || '').toUpperCase();
       const displayName = (Array.isArray(s.display_names) ? s.display_names[0] : s.display_names) || s.entity_name || query;
-      if (formType.includes('D')) {
+      if (formType.includes('ADV')) {
+        if (!result.formADV) {
+          result.formADV = {
+            crdNumber: String(s.crdNumber || ''),
+            secNumber: String(s.secNumber || (Array.isArray(s.ciks) ? s.ciks[0] : s.ciks) || ''),
+            primaryBusinessName: String(displayName),
+            regulatoryAumDollars: Number(s.regulatoryAumDollars || s.aum || 0),
+            hasHighNetWorthClients: Boolean(s.hasHighNetWorthClients),
+            hasPrivateFundClients: Boolean(s.hasPrivateFundClients),
+          };
+        }
+      } else if (formType.includes('D')) {
         result.formD.push({
           accessionNumber: String(s.accession_no || s.accessionNumber || h?._id || ''),
           filingDate: String(s.file_date || s.filingDate || ''),
@@ -27,17 +38,6 @@ export async function searchEdgar(query: string): Promise<{ formD: FormDFiling[]
           executiveOfficers: Array.isArray(s.executiveOfficers) ? s.executiveOfficers : [],
           isRealEstateFund: /real estate|property|fund|realty/i.test(String(displayName)),
         });
-      } else if (formType.includes('ADV')) {
-        if (!result.formADV) {
-          result.formADV = {
-            crdNumber: String(s.crdNumber || ''),
-            secNumber: String(s.secNumber || (Array.isArray(s.ciks) ? s.ciks[0] : s.ciks) || ''),
-            primaryBusinessName: String(displayName),
-            regulatoryAumDollars: Number(s.regulatoryAumDollars || s.aum || 0),
-            hasHighNetWorthClients: Boolean(s.hasHighNetWorthClients),
-            hasPrivateFundClients: Boolean(s.hasPrivateFundClients),
-          };
-        }
       }
     }
   } catch {

@@ -3,6 +3,11 @@ import type { FinraIndividualRecord } from './types';
 
 const FINRA_UA = 'HermesPropTech/1.0 (compliance@hermesproptech.internal)';
 
+export function isAccreditedByLicense(licenses: string[]): boolean {
+  const accreditedLicenses = ['Series 7', 'Series 65', 'Series 82', '7', '65', '82'];
+  return licenses.some((l) => accreditedLicenses.some((a) => l.toLowerCase().includes(a.toLowerCase())));
+}
+
 export async function searchFinra(_env: Env, name: string): Promise<FinraIndividualRecord | null> {
   const url = `https://api.brokercheck.finra.org/search/individual?query=${encodeURIComponent(name)}&limit=5`;
   let data: any = null;
@@ -29,10 +34,7 @@ export async function searchFinra(_env: Env, name: string): Promise<FinraIndivid
     if (examName) activeLicenses.push(examName);
   }
 
-  const accreditedLicenses = ['Series 7', 'Series 65', 'Series 82', '7', '65', '82'];
-  const isAccreditedByLicense = activeLicenses.some((l) =>
-    accreditedLicenses.some((a) => l.toLowerCase().includes(a.toLowerCase()))
-  );
+  const isAccredited = isAccreditedByLicense(activeLicenses);
 
   const disclosures: any[] = s.disclosures || s.disclosureCount ? [s.disclosures] : [];
   const hasDisciplinaryHistory =
@@ -48,8 +50,10 @@ export async function searchFinra(_env: Env, name: string): Promise<FinraIndivid
     fullName,
     currentFirm,
     activeLicenses,
-    isAccreditedByLicense,
+    isAccreditedByLicense: isAccredited,
     hasDisciplinaryHistory,
     yearsOfExperience,
   };
 }
+export const isAccredited = isAccreditedByLicense;
+export const isQualifiedPurchaser = (aum: number) => aum > 5000000;

@@ -90,3 +90,7 @@ export async function validatePhone(env: Env, rawPhone: string): Promise<PhoneVa
     isTcpaSafeForSms: carrier.lineType === 'mobile' && dnc === 'clean',
   };
 }
+
+export function isTcpaSafeForSms(lineType: string, dncStatus: string): boolean {
+  return lineType === 'mobile' && dncStatus === 'clean';
+}
