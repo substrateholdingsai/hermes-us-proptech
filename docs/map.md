@@ -15,7 +15,8 @@ hermes-us-proptech/
 ├── .gitignore
 ├── docs/
 │   ├── map.md
-│   └── designsystem.md
+│   ├── designsystem.md
+│   └── openapi.json
 ├── migrations/
 │   ├── 0001_init.sql
 │   └── 0002_tenants_and_credits.sql
@@ -29,6 +30,8 @@ hermes-us-proptech/
 │   └── integration/
 └── src/
     ├── index.ts
+    ├── docs/
+    │   └── openapi.ts
     ├── types/
     │   ├── env.ts
     │   └── auth.ts
@@ -48,7 +51,15 @@ hermes-us-proptech/
     │   ├── property/
     │   ├── sec/
     │   ├── skiptrace/
-    │   └── reports/
+    │   ├── reports/
+    │   └── crm/
+    │       ├── types.ts
+    │       ├── hmac.ts
+    │       ├── followupboss.ts
+    │       ├── hubspot.ts
+    │       ├── salesforce.ts
+    │       ├── webhooks.ts
+    │       └── index.ts
     ├── views/
     │   ├── layout.ts
     │   ├── overview.ts
@@ -57,7 +68,8 @@ hermes-us-proptech/
     │   └── dossierModal.ts
     └── routes/
         ├── intelligence.ts
-        └── dashboard.ts
+        ├── dashboard.ts
+        └── docs.ts
 ```
 
 ## Checklist
@@ -73,10 +85,10 @@ hermes-us-proptech/
 - [x] Dossiers ejecutivos PDF + R2 Storage & Download
 - [x] Frontend VEKTOR v1.0.0 (Hono Edge UI + Tailwind + Lucide + Alpine)
 - [x] Typecheck OK (0 errores)
-- [x] Tests automatizados (Vitest): unit + integration (30 tests OK)
+- [x] Tests automatizados (Vitest): unit + integration (34 tests OK)
 - [x] CI/CD (GitHub Actions: ci.yml + deploy.yml)
 - [x] Documentación OpenAPI (Swagger)
+- [x] Integración CRM Webhooks (HubSpot, Salesforce, Follow Up Boss)
 
 ### Pendiente
-- [ ] Integración CRM Webhooks (HubSpot, Salesforce, Follow Up Boss)
 - [ ] Deploy a producción (`wrangler deploy`)

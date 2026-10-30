@@ -8,10 +8,32 @@ import { resolveSOSEntity } from '../services/sos';
 import type { USStateCode } from '../services/sos/types';
 import { generateExecutiveDossier } from '../services/reports';
 import { getReportPdfFromR2 } from '../services/reports/storage';
+import { syncLeadToCrm, normalizeLead } from '../services/crm';
+import type { NormalizedLead, CrmSyncConfig } from '../services/crm/types';
 
 export const intelligence = new Hono<{ Bindings: Env }>();
 
 intelligence.use('*', authMiddleware);
+
+function normalizeLeadFromJob(payload: Record<string, unknown>, taskType?: string): NormalizedLead {
+  const base: NormalizedLead = {
+    fullName: String(payload.subjectName || payload.entityName || payload.fullName || 'Unknown'),
+    source: 'VEKTOR Intelligence',
+  };
+  if (payload.email) base.email = String(payload.email);
+  if (payload.phone) base.phone = String(payload.phone);
+  if (payload.lineType) base.lineType = payload.lineType as NormalizedLead['lineType'];
+  if (payload.dncStatus) base.dncStatus = payload.dncStatus as NormalizedLead['dncStatus'];
+  if (payload.propertyAddress) base.propertyAddress = String(payload.propertyAddress);
+  if (payload.county) base.county = String(payload.county);
+  if (payload.state) base.state = String(payload.state);
+  if (payload.marketValueCents) base.marketValueDollars = Number(payload.marketValueCents) / 100;
+  if (payload.equityCents) base.equityDollars = Number(payload.equityCents) / 100;
+  if (payload.equityPercent) base.equityPercent = Number(payload.equityPercent);
+  if (payload.investorType) base.investorType = payload.investorType as NormalizedLead['investorType'];
+  if (payload.uboName) base.uboName = String(payload.uboName);
+  return base;
+}
 
 function toInt(value: string | undefined, fallback: number): number {
   const n = Number(value);
@@ -324,6 +346,50 @@ intelligence.get('/reports/:reportId/download', requireScope('intel:read'), asyn
   headers.set('Content-Disposition', `inline; filename="Hermes-Dossier-${reportId}.pdf"`);
   headers.set('Cache-Control', 'private, max-age=3600');
   return new Response(obj.body, { headers });
+});
+
+intelligence.post('/crm/sync', requireScope('intel:write'), async (c) => {
+  let body: { lead?: NormalizedLead; config?: CrmSyncConfig; jobId?: string; provider?: string; event?: string } = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const tenant = c.get('tenant');
+  const ctx = { tenantId: tenant.id, env: c.env };
+
+  let lead: NormalizedLead | null = body.lead ? normalizeLead(body.lead) : null;
+
+  if (!lead && body.jobId) {
+    try {
+      const obj = await c.env.R2?.get(`snapshots/${tenant.id}/${body.jobId}.json`);
+      if (obj) {
+        const snap = JSON.parse(await obj.text());
+        const payload = (snap.resultPayload || snap.payload || {}) as Record<string, unknown>;
+        lead = normalizeLeadFromJob(payload, snap.taskType);
+      }
+    } catch {
+      lead = null;
+    }
+  }
+
+  if (!lead) {
+    return c.json({ ok: false, error: 'missing_lead', message: 'lead or jobId is required' }, 400);
+  }
+
+  let config: CrmSyncConfig | undefined = body.config;
+  if (!config && body.provider) {
+    config = { provider: body.provider as CrmSyncConfig['provider'], isActive: true };
+  }
+
+  try {
+    const results = await syncLeadToCrm(ctx, lead, config);
+    return c.json({ ok: true, results });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error('Error CRM sync:', { error: msg });
+    return c.json({ ok: false, error: msg }, 500);
+  }
 });
 
 intelligence.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-intel' }));
