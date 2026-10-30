@@ -95,17 +95,30 @@ export function overviewView(): string {
       console.warn('Credits load deferred:', e);
     }
 
-    try {
-      const [tr, er] = await Promise.all([
-        api('/api/v1/intelligence/skip-trace'),
-        api('/api/v1/intelligence/entities')
-      ]);
-      const tData = tr.ok ? await tr.json() : {};
-      const eData = er.ok ? await er.json() : {};
-      
-      const targetItems = tData.items || tData.records || [];
-      const entityItems = eData.items || eData.records || [];
+    let targetItems = [];
+    let entityItems = [];
 
+    try {
+      const tr = await api('/api/v1/intelligence/skip-trace');
+      if (tr.ok) {
+        const tData = await tr.json();
+        targetItems = tData.items || tData.records || [];
+      }
+    } catch (e) {
+      console.warn('Target items query deferred:', e);
+    }
+
+    try {
+      const er = await api('/api/v1/intelligence/entities');
+      if (er.ok) {
+        const eData = await er.json();
+        entityItems = eData.items || eData.records || [];
+      }
+    } catch (e) {
+      console.warn('Entity items query deferred:', e);
+    }
+
+    try {
       const hitsEl = document.getElementById('hits');
       const allHits = [];
 
@@ -155,6 +168,7 @@ export function overviewView(): string {
       }).join('');
 
     } catch (e) {
+      console.error('Hits render error:', e);
       document.getElementById('hits').innerHTML = '<tr><td colspan="6" class="py-4 text-center text-vektor-red">Failed to load hits stream. Verify connection.</td></tr>';
     }
   }

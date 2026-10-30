@@ -6,12 +6,15 @@ import { hashApiKey } from '../lib/crypto';
 export const authMiddleware = createMiddleware<{ Bindings: Env }>(async (c, next) => {
   const authHeader = c.req.header('authorization');
   const apiKeyHeader = c.req.header('x-api-key');
+  const queryToken = c.req.query('key') || c.req.query('token') || c.req.query('apiKey');
 
   let token: string | undefined;
   if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
     token = authHeader.slice(7).trim();
   } else if (apiKeyHeader) {
     token = apiKeyHeader.trim();
+  } else if (queryToken) {
+    token = queryToken.trim();
   }
 
   if (!token) {

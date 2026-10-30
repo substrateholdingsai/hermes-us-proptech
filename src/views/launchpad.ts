@@ -241,17 +241,33 @@ export function launchpadView(): string {
 
   async function downloadDossierFromProbe() {
     try {
+      const title = document.getElementById('resTitle').textContent || 'Target';
       const res = await postJson('/api/v1/intelligence/reports/generate', {
         jobId: lastJobId || 'demo_job',
-        subjectName: document.getElementById('resTitle').textContent
+        subjectName: title
       });
-      if (res.downloadUrl) {
-        window.open(res.downloadUrl, '_blank');
+      if (res.reportId) {
+        const token = getApiKey();
+        const dlUrl = '/api/v1/intelligence/reports/' + res.reportId + '/download?key=' + encodeURIComponent(token);
+        const r = await fetch(dlUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+        if (r.ok) {
+          const blob = await r.blob();
+          const u = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = u;
+          a.download = 'Dossier-' + title.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(u);
+        } else {
+          window.open(dlUrl, '_blank');
+        }
       } else {
         alert('Report generated: ' + JSON.stringify(res));
       }
     } catch (e) {
-      alert('Report generation: ' + e.message);
+      alert('Report generation error: ' + e.message);
     }
   }
 
