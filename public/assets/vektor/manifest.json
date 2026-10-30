@@ -1,0 +1,57 @@
+{
+  "schema": "bobs.asset-manifest.v1",
+  "system": "VEKTOR",
+  "slug": "skiptracing-vektor",
+  "cliente": "Skip Tracing Intelligence Platform",
+  "huesped": "ops",
+  "kind": "vector-forge",
+  "stdlib_only": true,
+  "noise_seed": 9743,
+  "files": [
+    {
+      "path": "favicon.svg",
+      "bytes": 917,
+      "kb": 0.9
+    },
+    {
+      "path": "logo-lockup.svg",
+      "bytes": 1610,
+      "kb": 1.57
+    },
+    {
+      "path": "monogram-vektor.svg",
+      "bytes": 1034,
+      "kb": 1.01
+    },
+    {
+      "path": "pattern-vektor.svg",
+      "bytes": 1524,
+      "kb": 1.49
+    },
+    {
+      "path": "texture-scanline.svg",
+      "bytes": 315,
+      "kb": 0.31
+    },
+    {
+      "path": "divider-scan.svg",
+      "bytes": 826,
+      "kb": 0.81
+    },
+    {
+      "path": "og-image.svg",
+      "bytes": 4298,
+      "kb": 4.2
+    },
+    {
+      "path": "sprite-tracing.svg",
+      "bytes": 2385,
+      "kb": 2.33
+    }
+  ],
+  "total_bytes": 12909,
+  "total_kb": 12.61,
+  "checks": {
+    "pattern_vektor_under_4kb": true
+  }
+}

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <radialGradient id="ogBg" cx="30%" cy="40%" r="80%">
+      <stop offset="0" stop-color="#161B22"/>
+      <stop offset="1" stop-color="#0A0E14"/>
+    </radialGradient>
+    <pattern id="ogGrid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="16" cy="16" r="0.5" fill="#6E7681" opacity="0.22"/>
+      <circle cx="16" cy="16" r="4" fill="none" stroke="#30363D" stroke-width="0.5" opacity="0.25"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#ogBg)"/>
+  <rect width="1200" height="630" fill="url(#ogGrid)"/>
+
+  <!-- marco de safe zone -->
+  <rect x="40" y="40" width="1120" height="550" fill="none" stroke="#30363D" stroke-width="1"/>
+
+  <!-- banda de estado superior tipo terminal -->
+  <rect x="40" y="40" width="1120" height="36" fill="#0A0E14"/>
+  <circle cx="68" cy="58" r="5" fill="#3FB950"/>
+  <text x="86" y="63" font-family="'JetBrains Mono', Consolas, monospace"
+        font-size="12" fill="#8B949E" letter-spacing="2">SYSTEM OPERATIONAL · vektor-ops</text>
+  <text x="1140" y="63" font-family="'JetBrains Mono', Consolas, monospace"
+        font-size="12" fill="#22D3EE" letter-spacing="2" text-anchor="end">47 HITS · 24h</text>
+
+  <!-- monograma grande -->
+  <g transform="translate(120 160) scale(1.8)">
+    <circle cx="64" cy="64" r="58" fill="#0A0E14" stroke="#30363D" stroke-width="1.5"/>
+    <circle cx="64" cy="64" r="48" fill="none" stroke="#21262D" stroke-width="1" stroke-dasharray="2 4" opacity="0.6"/>
+    <circle cx="64" cy="64" r="34" fill="none" stroke="#21262D" stroke-width="1" stroke-dasharray="2 4" opacity="0.4"/>
+    <line x1="31.1" y1="45.0" x2="64" y2="64" stroke="#22D3EE" stroke-width="4" stroke-linecap="round"/>
+    <line x1="96.9" y1="45.0" x2="64" y2="64" stroke="#22D3EE" stroke-width="4" stroke-linecap="round"/>
+    <line x1="64.0" y1="102.0" x2="64" y2="64" stroke="#22D3EE" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="64" cy="64" r="5" fill="#22D3EE"/>
+  </g>
+
+  <!-- tipografía -->
+  <text x="420" y="250" font-family="'Space Grotesk', 'Inter', system-ui, sans-serif"
+        font-size="96" font-weight="700" letter-spacing="-2" fill="#E6EDF3">VEKTOR</text>
+  <text x="422" y="310" font-family="'JetBrains Mono', Consolas, monospace"
+        font-size="22" font-weight="500" letter-spacing="5" fill="#22D3EE">SKIP TRACING INTELLIGENCE</text>
+
+  <line x1="420" y1="340" x2="880" y2="340" stroke="#30363D" stroke-width="1"/>
+
+  <text x="422" y="384" font-family="'Inter', system-ui, sans-serif"
+        font-size="22" fill="#8B949E">Cada dato es un vector. Cada cruce, una señal.</text>
+
+  <!-- KPIs simuladas -->
+  <g transform="translate(420 420)">
+    <rect width="200" height="80" fill="#161B22" stroke="#21262D" rx="6"/>
+    <text x="16" y="28" font-family="'JetBrains Mono', Consolas, monospace"
+          font-size="10" fill="#6E7681" letter-spacing="2">TOTAL EQUITY</text>
+    <text x="16" y="62" font-family="'Space Grotesk', sans-serif"
+          font-size="32" font-weight="700" fill="#E6EDF3">$1.2B</text>
+  </g>
+  <g transform="translate(640 420)">
+    <rect width="200" height="80" fill="#161B22" stroke="#21262D" rx="6"/>
+    <text x="16" y="28" font-family="'JetBrains Mono', Consolas, monospace"
+          font-size="10" fill="#6E7681" letter-spacing="2">SUBJECTS RESOLVED</text>
+    <text x="16" y="62" font-family="'Space Grotesk', sans-serif"
+          font-size="32" font-weight="700" fill="#E6EDF3">8,429</text>
+  </g>
+  <g transform="translate(860 420)">
+    <rect width="200" height="80" fill="#161B22" stroke="#21262D" rx="6"/>
+    <text x="16" y="28" font-family="'JetBrains Mono', Consolas, monospace"
+          font-size="10" fill="#6E7681" letter-spacing="2">TCPA SAFE</text>
+    <text x="16" y="62" font-family="'Space Grotesk', sans-serif"
+          font-size="32" font-weight="700" fill="#3FB950">99.2%</text>
+  </g>
+
+  <!-- watermark -->
+  <text x="1160" y="590" font-family="'JetBrains Mono', Consolas, monospace"
+        font-size="11" fill="#6E7681" letter-spacing="2" text-anchor="end">vektor.arksystems.site</text>
+</svg>
