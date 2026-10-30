@@ -89,6 +89,7 @@ hermes-us-proptech/
 - [x] CI/CD (GitHub Actions: ci.yml + deploy.yml)
 - [x] Documentación OpenAPI (Swagger)
 - [x] Integración CRM Webhooks (HubSpot, Salesforce, Follow Up Boss)
+- [x] Deploy a producción (`wrangler deploy`)
 
 ### Pendiente
-- [ ] Deploy a producción (`wrangler deploy`)
+- (ninguno)
