@@ -34,10 +34,11 @@ describe('routes', () => {
     expect(res.status).toBe(404);
   });
 
-  it('GET / -> 302 /dashboard', async () => {
+  it('GET / -> 200 landing contains VEKTOR', async () => {
     const res = await app.request('/');
-    expect(res.status).toBe(302);
-    expect(res.headers.get('location')).toBe('/dashboard');
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('VEKTOR');
   });
 
   it('GET /dashboard -> 200 contains VEKTOR and SYSTEM OPERATIONAL', async () => {
