@@ -52,20 +52,20 @@ hermes-us-proptech/
     │   ├── sec/
     │   ├── skiptrace/
     │   ├── reports/
-    │   └── crm/
+    │   ├── crm/
+    │   └── harvester/
     │       ├── types.ts
-    │       ├── hmac.ts
-    │       ├── followupboss.ts
-    │       ├── hubspot.ts
-    │       ├── salesforce.ts
-    │       ├── webhooks.ts
+    │       ├── secHarvester.ts
+    │       ├── luxuryCashHarvester.ts
     │       └── index.ts
     ├── views/
     │   ├── layout.ts
     │   ├── overview.ts
     │   ├── launchpad.ts
     │   ├── explorer.ts
-    │   └── dossierModal.ts
+    │   ├── dossierModal.ts
+    │   ├── landing.ts
+    │   └── harvester.ts
     └── routes/
         ├── intelligence.ts
         ├── dashboard.ts
@@ -85,10 +85,12 @@ hermes-us-proptech/
 - [x] Dossiers ejecutivos PDF + R2 Storage & Download
 - [x] Frontend VEKTOR v1.0.0 (Hono Edge UI + Tailwind + Lucide + Alpine)
 - [x] Typecheck OK (0 errores)
-- [x] Tests automatizados (Vitest): unit + integration (34 tests OK)
+- [x] Tests automatizados (Vitest): unit + integration (37 tests OK)
 - [x] CI/CD (GitHub Actions: ci.yml + deploy.yml)
 - [x] Documentación OpenAPI (Swagger)
 - [x] Integración CRM Webhooks (HubSpot, Salesforce, Follow Up Boss)
+- [x] Landing page institucional
+- [x] VEKTOR Lead Harvester (SEC Form D + luxury cash buyers)
 - [x] Deploy a producción (`wrangler deploy`)
 
 ### Pendiente

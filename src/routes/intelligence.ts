@@ -10,6 +10,8 @@ import { generateExecutiveDossier } from '../services/reports';
 import { getReportPdfFromR2 } from '../services/reports/storage';
 import { syncLeadToCrm, normalizeLead } from '../services/crm';
 import type { NormalizedLead, CrmSyncConfig } from '../services/crm/types';
+import { harvestLeads } from '../services/harvester';
+import type { HarvestParams } from '../services/harvester/types';
 
 export const intelligence = new Hono<{ Bindings: Env }>();
 
@@ -388,6 +390,31 @@ intelligence.post('/crm/sync', requireScope('intel:write'), async (c) => {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error('Error CRM sync:', { error: msg });
+    return c.json({ ok: false, error: msg }, 500);
+  }
+});
+
+intelligence.post('/harvest', requireScope('intel:write'), async (c) => {
+  let body: HarvestParams = { source: 'sec_form_d' };
+  try {
+    body = await c.req.json();
+  } catch {
+    body = { source: 'sec_form_d' };
+  }
+  const tenant = c.get('tenant');
+  const ctx = { tenantId: tenant.id, env: c.env };
+  const limit = body.limit || 10;
+  const required = limit * 10;
+  if (!(await hasSufficientCredits(c.env.DB, tenant.id, required))) {
+    const balance = await getTenantBalance(c.env.DB, tenant.id);
+    return c.json({ ok: false, error: 'insufficient_credits', required, currentBalance: balance }, 402);
+  }
+  try {
+    const batch = await harvestLeads(ctx, body);
+    return c.json({ ok: true, batch });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error('Error harvest:', { error: msg });
     return c.json({ ok: false, error: msg }, 500);
   }
 });

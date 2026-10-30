@@ -42,6 +42,10 @@ body{font-family:Inter,sans-serif;background:#0A0E14;color:#E6EDF3;}
     <a href="/dashboard/explorer" class="flex items-center gap-2.5 px-3 py-2.5 rounded transition ${title === 'Explorer' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
       <span>Target Explorer</span>
     </a>
+    <a href="/dashboard/harvester" class="flex items-center justify-between px-3 py-2.5 rounded transition ${title === 'Harvester' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
+      <span>Lead Harvester</span>
+      <span class="badge-info text-[10px] px-1.5 py-0.5 rounded font-mono">HOT</span>
+    </a>
     <a href="/dashboard/dossier" class="flex items-center gap-2.5 px-3 py-2.5 rounded transition ${title === 'Dossier' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
       <span>Dossier & PDF Export</span>
     </a>

@@ -4,6 +4,7 @@ import { overviewView } from '../views/overview';
 import { launchpadView } from '../views/launchpad';
 import { explorerView } from '../views/explorer';
 import { dossierModalView } from '../views/dossierModal';
+import { harvesterView } from '../views/harvester';
 import { VEKTOR_ASSETS } from '../lib/vektorAssets';
 
 export const dashboard = new Hono<{ Bindings: Env }>();
@@ -33,4 +34,5 @@ dashboard.get('/assets/vektor/:file', async (c) => {
 dashboard.get('/', (c) => c.html(overviewView()));
 dashboard.get('/launchpad', (c) => c.html(launchpadView()));
 dashboard.get('/explorer', (c) => c.html(explorerView()));
+dashboard.get('/harvester', (c) => c.html(harvesterView()));
 dashboard.get('/dossier', (c) => c.html(dossierModalView()));
