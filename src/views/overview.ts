@@ -3,23 +3,148 @@ import { layout } from './layout';
 export function overviewView(): string {
   const body = `
   <div class="grid grid-cols-4 gap-4 mb-6">
-    <div class="bg-vektor-surface border border-vektor-line rounded p-4"><div class="text-xs text-vektor-sec">Total Equity</div><div class="font-mono text-2xl text-vektor-cyan">$1.2B</div><div class="text-xs text-vektor-green">+4.2%</div></div>
-    <div class="bg-vektor-surface border border-vektor-line rounded p-4"><div class="text-xs text-vektor-sec">Subjects Resolved</div><div class="font-mono text-2xl">8,429</div></div>
-    <div class="bg-vektor-surface border border-vektor-line rounded p-4"><div class="text-xs text-vektor-sec">TCPA Compliance</div><div class="font-mono text-2xl">99.2%</div><span class="badge-success text-xs px-2 py-0.5 rounded">TCPA Safe</span></div>
-    <div class="bg-vektor-surface border border-vektor-line rounded p-4"><div class="text-xs text-vektor-sec">Available Credits</div><div class="font-mono text-2xl" id="credits">—</div></div>
+    <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Total Equity Analyzed</div>
+      <div class="font-mono text-2xl text-vektor-cyan font-bold mt-1" id="kpiEquity">$1.2B</div>
+      <div class="text-[11px] text-vektor-green mt-1 flex items-center gap-1 font-mono"><span>↑</span> +4.2% historical volume</div>
+    </div>
+    <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Subjects Resolved</div>
+      <div class="font-mono text-2xl text-vektor-pri font-bold mt-1" id="kpiSubjects">8,429</div>
+      <div class="text-[11px] text-vektor-sec mt-1 font-mono">3 sources cross-verified</div>
+    </div>
+    <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">TCPA Safe Ratio</div>
+      <div class="font-mono text-2xl text-vektor-green font-bold mt-1">99.2%</div>
+      <div class="mt-1"><span class="badge-success text-[10px] px-2 py-0.5 rounded font-mono">DNC CLEAN</span></div>
+    </div>
+    <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Available Credits</div>
+      <div class="font-mono text-2xl text-vektor-cyan font-bold mt-1" id="credits">—</div>
+      <div class="text-[11px] text-vektor-sec mt-1 font-mono" id="creditsDesc">tenant: default</div>
+    </div>
   </div>
-  <div class="bg-vektor-surface border border-vektor-line rounded p-4 mb-6 vektor-scanline">
-    <input id="probeInput" autofocus placeholder="Enter LLC name, street address, target name, phone or CIK..." class="w-full bg-vektor-canvas border border-vektor-line rounded px-4 py-3 text-sm focus:border-vektor-cyan outline-none" />
-    <button onclick="probe()" class="mt-3 px-4 py-2 bg-vektor-cyan text-vektor-void font-display font-bold rounded">PROBE TARGET</button>
+
+  <div class="bg-vektor-surface border border-vektor-hi rounded-lg p-5 mb-6 vektor-scanline">
+    <div class="flex items-center justify-between mb-2">
+      <label class="font-mono text-xs text-vektor-cyan tracking-wider uppercase flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-vektor-cyan"></span> UNIFIED PROBE LAUNCHPAD
+      </label>
+      <span class="text-[11px] text-vektor-mut font-mono">Press ENTER to launch</span>
+    </div>
+    <div class="flex gap-2">
+      <input id="probeInput" autofocus 
+        onkeydown="if(event.key==='Enter')probe();" 
+        placeholder="Enter target name, US street address, LLC/Trust name or phone number..." 
+        class="flex-1 bg-vektor-canvas border border-vektor-line rounded px-4 py-3 text-sm focus:border-vektor-cyan outline-none transition font-sans text-vektor-pri" />
+      <button onclick="probe()" class="px-6 py-3 bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-sm tracking-wide rounded transition flex items-center gap-2">
+        <span>PROBE TARGET</span>
+      </button>
+    </div>
   </div>
+
   <div class="bg-vektor-surface border border-vektor-line rounded p-4">
-    <h3 class="font-display mb-3">Recent Hits</h3>
-    <table class="w-full text-sm"><thead><tr class="text-vektor-sec text-left"><th class="py-2">Subject</th><th>Type</th><th>Status</th></tr></thead><tbody id="hits"></tbody></table>
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-display font-bold text-sm text-vektor-pri tracking-wide">Recent Investigated Hits</h3>
+      <a href="/dashboard/explorer" class="text-xs text-vektor-cyan hover:underline font-mono">View All Explorer →</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="text-vektor-sec text-left border-b border-vektor-line">
+            <th class="py-2.5 font-medium">Target / Entity</th>
+            <th class="py-2.5 font-medium">Type</th>
+            <th class="py-2.5 font-medium">Location / State</th>
+            <th class="py-2.5 font-medium">Confidence</th>
+            <th class="py-2.5 font-medium">Compliance</th>
+            <th class="py-2.5 text-right font-medium">Action</th>
+          </tr>
+        </thead>
+        <tbody id="hits" class="divide-y divide-vektor-line">
+          <tr><td colspan="6" class="py-4 text-center text-vektor-mut">Loading recent hits...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
+
   <script>
-  async function loadCredits(){const r=await api('/api/v1/intelligence/tenant/credits');if(r.ok){const d=await r.json();document.getElementById('credits').textContent=d.balance;}}
-  function probe(){const v=document.getElementById('probeInput').value;window.location='/dashboard/launchpad?q='+encodeURIComponent(v);}
-  loadCredits();
-  </script>`;
+  async function loadOverview() {
+    try {
+      const cr = await api('/api/v1/intelligence/tenant/credits');
+      if (cr.ok) {
+        const d = await cr.json();
+        document.getElementById('credits').textContent = (d.balance || 0).toLocaleString();
+        if (d.tenant) {
+          document.getElementById('creditsDesc').textContent = 'plan: ' + (d.tenant.plan || 'starter').toUpperCase();
+        }
+      }
+    } catch {}
+
+    try {
+      const [tr, er] = await Promise.all([
+        api('/api/v1/intelligence/skip-trace'),
+        api('/api/v1/intelligence/entities')
+      ]);
+      const tData = tr.ok ? await tr.json() : { records: [] };
+      const eData = er.ok ? await er.json() : { records: [] };
+      
+      const hitsEl = document.getElementById('hits');
+      const allHits = [];
+
+      (tData.records || []).forEach(r => {
+        allHits.push({
+          name: r.subject_name || 'Subject',
+          type: 'SKIP-TRACE',
+          state: r.dnc_status === 'clean' ? 'DNC CLEAN' : 'FLAGGED',
+          isClean: r.dnc_status === 'clean',
+          confidence: Math.round((r.confidence || 0.85) * 100) + '%',
+          isTarget: true
+        });
+      });
+
+      (eData.records || []).forEach(e => {
+        allHits.push({
+          name: e.entity_name || 'Corporate Entity',
+          type: 'SOS / LLC',
+          state: e.state_of_formation || 'DE',
+          isClean: e.status === 'resolved',
+          confidence: '95%',
+          isTarget: false
+        });
+      });
+
+      if (!allHits.length) {
+        hitsEl.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-vektor-mut">No probe hits logged yet. Use the Launchpad input above to run an analysis.</td></tr>';
+        return;
+      }
+
+      hitsEl.innerHTML = allHits.slice(0, 8).map(h => {
+        const badge = h.isClean 
+          ? '<span class="badge-success px-1.5 py-0.5 rounded text-[10px]">VERIFIED</span>'
+          : '<span class="badge-warning px-1.5 py-0.5 rounded text-[10px]">REVIEW</span>';
+        return '<tr class="hover:bg-vektor-surface-2/60 transition">' +
+          '<td class="py-2.5 font-medium text-vektor-pri">' + h.name + '</td>' +
+          '<td class="py-2.5 font-mono text-vektor-sec text-[11px]">' + h.type + '</td>' +
+          '<td class="py-2.5 font-mono text-vektor-cyan">' + h.state + '</td>' +
+          '<td class="py-2.5 font-mono text-vektor-sec">' + h.confidence + '</td>' +
+          '<td class="py-2.5">' + badge + '</td>' +
+          '<td class="py-2.5 text-right"><a href="/dashboard/launchpad?q=' + encodeURIComponent(h.name) + '" class="text-vektor-cyan hover:underline font-mono text-[11px]">Inspect →</a></td>' +
+        '</tr>';
+      }).join('');
+
+    } catch (e) {
+      document.getElementById('hits').innerHTML = '<tr><td colspan="6" class="py-4 text-center text-vektor-red">Failed to load hits stream</td></tr>';
+    }
+  }
+
+  function probe() {
+    const v = document.getElementById('probeInput').value.trim();
+    if (!v) return;
+    window.location = '/dashboard/launchpad?q=' + encodeURIComponent(v);
+  }
+
+  loadOverview();
+  </script>
+  `;
   return layout('Console', body);
 }
