@@ -3,6 +3,7 @@ import { newId, nowIso, parseJson } from './db';
 import { logger } from '../lib/logger';
 import { resolveSOSEntity } from './sos';
 import { resolvePropertyEquity } from './property';
+import { validateSecInvestor } from './sec';
 
 export type IntelTaskType =
   | 'entity_resolution'
@@ -200,33 +201,35 @@ async function runPropertyEquity(ctx: TenantContext, params: IntelJobParams): Pr
 
 async function runSecValidation(ctx: TenantContext, params: IntelJobParams): Promise<Record<string, unknown>> {
   const name = params.subjectName || params.entityName || 'Investor';
-  const hasFormD = Math.random() > 0.4;
-  const hasFormAdv = Math.random() > 0.7;
-  const investorType = hasFormAdv ? 'qualified_purchaser' : hasFormD ? 'accredited' : 'unknown';
-  const ai = await callWorkersAI(
-    ctx.env,
-    `Classify US investor "${name}" as Accredited Investor (Rule 501 Reg D) or Qualified Purchaser based on SEC Form D/ADV. FormD=${hasFormD}, FormADV=${hasFormAdv}.`
-  );
+
+  const result = await validateSecInvestor(ctx, {
+    subjectName: params.subjectName,
+    entityName: params.entityName,
+    customPrompt: params.customPrompt,
+  });
+
   const profile = {
     id: newId('inv'),
     tenant_id: ctx.tenantId,
     full_name: name,
     entity_name: params.entityName || null,
-    investor_type: investorType,
-    sec_form_d: hasFormD ? 1 : 0,
-    sec_form_adv: hasFormAdv ? 1 : 0,
+    investor_type: result.investorType,
+    sec_form_d: result.hasSecFormD ? 1 : 0,
+    sec_form_adv: result.hasSecFormADV ? 1 : 0,
+    equity_score: result.equityScore,
   };
   try {
     await ctx.env.DB.prepare(
-      `INSERT INTO investor_profiles (id, tenant_id, full_name, entity_name, investor_type, sec_form_d, sec_form_adv, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO investor_profiles (id, tenant_id, full_name, entity_name, investor_type, sec_form_d, sec_form_adv, equity_score, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
-      .bind(profile.id, profile.tenant_id, profile.full_name, profile.entity_name, profile.investor_type, profile.sec_form_d, profile.sec_form_adv, nowIso(), nowIso())
+      .bind(profile.id, profile.tenant_id, profile.full_name, profile.entity_name, profile.investor_type, profile.sec_form_d, profile.sec_form_adv, profile.equity_score, nowIso(), nowIso())
       .run();
   } catch (err) {
     logger.warn('Persistencia investor_profiles diferida:', { error: String(err) });
   }
-  return { ...profile, aiInsights: ai };
+
+  return { ...profile, sec: result };
 }
 
 async function runSkipTrace(ctx: TenantContext, params: IntelJobParams): Promise<Record<string, unknown>> {

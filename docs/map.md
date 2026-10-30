@@ -29,15 +29,12 @@ hermes-us-proptech/
     │   ├── db.ts
     │   ├── credits.ts
     │   ├── hermesAgent.ts
-    │   └── sos/
+    │   ├── sos/
+    │   └── property/
     │       ├── types.ts
-    │       ├── common.ts
-    │       ├── florida.ts
-    │       ├── texas.ts
-    │       ├── wyoming.ts
-    │       ├── delaware.ts
-    │       ├── nevada.ts
-    │       └── index.ts
+    │       ├── aggregator.ts
+    │       ├── index.ts
+    │       └── counties/
     └── routes/
         └── intelligence.ts
 ```
@@ -48,11 +45,12 @@ hermes-us-proptech/
 - [x] Scaffolding + git
 - [x] D1/R2/AI/DO bindings y migraciones
 - [x] Auth multi-tenant + créditos
-- [x] SOS multi-state (TX, FL, WY, DE, NV) + UBO AI
+- [x] SOS multi-state + UBO AI
+- [x] Property equity híbrido (aggregator + counties + AI)
 - [x] Typecheck OK
 
 ### Pendiente
-- [ ] Integraciones reales County/SEC/Carrier/DNC/SMTP
+- [ ] Integraciones reales SEC/Carrier/DNC/SMTP
 - [ ] PDF/CRM
 - [ ] Frontend
 - [ ] Tests/CI
