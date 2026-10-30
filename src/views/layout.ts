@@ -27,6 +27,7 @@ body{font-family:Inter,sans-serif;background:#0A0E14;color:#E6EDF3;}
     <a href="/dashboard/launchpad" class="px-3 py-2 rounded hover:bg-vektor-surface-2">Probes</a>
     <a href="/dashboard/explorer" class="px-3 py-2 rounded hover:bg-vektor-surface-2">Explorer</a>
     <a href="/dashboard/audit" class="px-3 py-2 rounded hover:bg-vektor-surface-2">Audit Logs</a>
+    <a href="/docs" class="px-3 py-2 rounded hover:bg-vektor-surface-2">API Docs (Swagger)</a>
   </nav>
   <div class="mt-auto">
     <div class="text-xs text-vektor-sec mb-1">credits · 1,247 / 5,000</div>

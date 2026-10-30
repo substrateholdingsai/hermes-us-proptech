@@ -75,8 +75,8 @@ hermes-us-proptech/
 - [x] Typecheck OK (0 errores)
 - [x] Tests automatizados (Vitest): unit + integration (30 tests OK)
 - [x] CI/CD (GitHub Actions: ci.yml + deploy.yml)
+- [x] Documentación OpenAPI (Swagger)
 
 ### Pendiente
 - [ ] Integración CRM Webhooks (HubSpot, Salesforce, Follow Up Boss)
-- [ ] Documentación OpenAPI (Swagger)
 - [ ] Deploy a producción (`wrangler deploy`)
