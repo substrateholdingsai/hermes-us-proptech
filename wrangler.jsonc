@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.jsonc",
+  "name": "hermes-us-proptech",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "TZ": "America/New_York",
+    "APP_URL": "https://hermes-us-proptech.arksystems.site",
+    "CREDIT_COST_ENTITY_RESOLUTION": "5",
+    "CREDIT_COST_PROPERTY_EQUITY": "8",
+    "CREDIT_COST_SEC_VALIDATION": "3",
+    "CREDIT_COST_SKIP_TRACE": "10"
+  },
+  "ai": { "binding": "AI" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hermes-us-intel-db",
+      "database_id": "2a3112c8-ab1a-407e-afd5-d7d459871d6c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "hermes-intel-snapshots"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "HERMES_SANDBOX", "class_name": "HermesSandboxDO" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["HermesSandboxDO"] }
+  ],
+  "observability": { "enabled": true }
+}
