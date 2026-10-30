@@ -31,7 +31,8 @@ hermes-us-proptech/
     │   ├── hermesAgent.ts
     │   ├── sos/
     │   ├── property/
-    │   └── sec/
+    │   ├── sec/
+    │   └── skiptrace/
     └── routes/
         └── intelligence.ts
 ```
@@ -45,10 +46,10 @@ hermes-us-proptech/
 - [x] SOS multi-state + UBO AI
 - [x] Property equity híbrido
 - [x] SEC/FINRA validation engine
+- [x] Skip-trace TCPA-compliant + carrier + email MX
 - [x] Typecheck OK
 
 ### Pendiente
-- [ ] Skip-tracing real (carrier lookup, DNC, SMTP)
 - [ ] PDF/CRM
 - [ ] Frontend
 - [ ] Tests/CI

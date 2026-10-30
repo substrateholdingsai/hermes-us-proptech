@@ -6,6 +6,8 @@ import { authMiddleware, requireScope } from '../middleware/auth';
 import { getTenantBalance, hasSufficientCredits, deductCredits } from '../services/credits';
 import { resolveSOSEntity } from '../services/sos';
 import type { USStateCode } from '../services/sos/types';
+import { generateExecutiveDossier } from '../services/reports';
+import { getReportPdfFromR2 } from '../services/reports/storage';
 
 export const intelligence = new Hono<{ Bindings: Env }>();
 
@@ -287,6 +289,41 @@ intelligence.get('/sos/resolve', requireScope('intel:read'), async (c) => {
     logger.error('Error SOS resolve:', { error: msg });
     return c.json({ ok: false, error: msg }, 500);
   }
+});
+
+intelligence.post('/reports/generate', requireScope('intel:read'), async (c) => {
+  let body: { jobId?: string; subjectName?: string; propertyAddress?: string } = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    body = {};
+  }
+  const tenant = c.get('tenant');
+  try {
+    const { reportId } = await generateExecutiveDossier(c.env, {
+      tenantId: tenant.id,
+      jobId: body.jobId,
+      subjectName: body.subjectName,
+      propertyAddress: body.propertyAddress,
+    });
+    return c.json({ ok: true, reportId, downloadUrl: `/api/v1/intelligence/reports/${reportId}/download` });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error('Error generate report:', { error: msg });
+    return c.json({ ok: false, error: msg }, 500);
+  }
+});
+
+intelligence.get('/reports/:reportId/download', requireScope('intel:read'), async (c) => {
+  const tenant = c.get('tenant');
+  const reportId = c.req.param('reportId');
+  const obj = await getReportPdfFromR2(c.env, tenant.id, reportId);
+  if (!obj) return c.json({ ok: false, error: 'not_found' }, 404);
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/pdf');
+  headers.set('Content-Disposition', `inline; filename="Hermes-Dossier-${reportId}.pdf"`);
+  headers.set('Cache-Control', 'private, max-age=3600');
+  return new Response(obj.body, { headers });
 });
 
 intelligence.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-intel' }));
