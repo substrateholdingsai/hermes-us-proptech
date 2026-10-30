@@ -11,6 +11,57 @@ export async function generateDossierPdf(data: ExecutiveDossierData): Promise<Ui
     page.drawText(text, { x: 50, y, size, font: f, color });
     y -= size + 4;
   };
+
+  const isMx = data.jurisdiction === 'MX' || !!data.mexicoCorporateSection;
+
+  if (isMx) {
+    line('HERMES INTELLIGENCE DOSSIER · MÉXICO JURISDICTION', 16, bold);
+    line(`Report ID: ${data.reportId}`);
+    line(`Tenant: ${data.tenantId}`);
+    line(`Generated: ${data.generatedAt}`);
+    line(`Subject: ${data.subjectTitle}`);
+    line(`Overall Score: ${data.overallScore}/100`);
+    line(`Investor Status: ${data.investorStatusBadge}`);
+    y -= 8;
+
+    if (data.mexicoCorporateSection) {
+      const m = data.mexicoCorporateSection;
+      line('Bloque 1 - Estructura Corporativa & UBO (SIGER 2.0)', 13, bold);
+      line(`Razón Social: ${m.razonSocial}`);
+      line(`Folio Mercantil: ${m.folioMercantil} | Estado: ${m.entidadFederativa}`);
+      line(`Clave RFC: ${m.rfcClave} | Régimen: ${m.regimenFiscal}`);
+      line(`Administrador Único: ${m.administradorUnico}`);
+      line(`Capital Social Suscrito: ${m.capitalSocialMxnFormatted}`);
+      y -= 6;
+    }
+
+    if (data.mexicoPropertySection) {
+      const p = data.mexicoPropertySection;
+      line('Bloque 2 - Registro de la Propiedad & Notarial (RPPyC)', 13, bold);
+      line(`Ubicación / Corredor: ${p.ubicacion}`);
+      if (p.folioReal) line(`Folio Real: ${p.folioReal}`);
+      line(`Notaría: Notaría Pública No. ${p.notariaNumero} (${p.notarioTitular})`);
+      line(`Valor de Operación: ${p.valorAdquisicionMxnFormatted} (Cash Acquisition: ${p.esOperacionEfectivoSinGravamen ? 'Sí' : 'No'})`);
+      line(`Zona Restringida (Art. 27 Constitucional): ${p.aplicaFideicomisoZonaRestringida ? 'Fideicomiso Inmobiliario Activo' : 'No Aplica'}`);
+      y -= 6;
+    }
+
+    if (data.mexicoComplianceSection) {
+      const c = data.mexicoComplianceSection;
+      line('Bloque 3 - Cumplimiento Telecom & Ley de Protección al Consumidor', 13, bold);
+      line(`Teléfono E.164: ${data.contactSection?.phoneFormatted ?? ''} (Carrier: ${c.carrierIft})`);
+      line(`Dictamen PROFECO REPEP: ${c.repepStatus === 'clean' ? 'No Inscrito (Limpio para Contacto Comercial)' : 'Restringido'}`);
+      line(`Dictamen CONDUSEF REUS: ${c.reusStatus === 'clean' ? 'Limpio' : 'Restringido'}`);
+      line(`Cumplimiento Art. 16-18 LFPC: ${c.isTcpaSafe ? 'Aprobado (TCPA/LFPC Compliant)' : 'No Seguro'}`);
+      line(`Clasificación Bursátil CNBV: ${c.dictamenCnbvAmib}`);
+      y -= 6;
+    }
+
+    y -= 10;
+    line('Dictamen confidencial para debida diligencia patrimonial y cumplimiento PLD/FT en los Estados Unidos Mexicanos.', 8, font, rgb(0.4, 0.45, 0.5));
+    return doc.save();
+  }
+
   line('HERMES INTELLIGENCE DOSSIER', 18, bold);
   line(`Report ID: ${data.reportId}`);
   line(`Tenant: ${data.tenantId}`);

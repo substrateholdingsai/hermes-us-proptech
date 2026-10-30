@@ -317,7 +317,7 @@ intelligence.get('/sos/resolve', requireScope('intel:read'), async (c) => {
 });
 
 intelligence.post('/reports/generate', requireScope('intel:read'), async (c) => {
-  let body: { jobId?: string; subjectName?: string; propertyAddress?: string } = {};
+  let body: { jobId?: string; subjectName?: string; propertyAddress?: string; jurisdiction?: 'US' | 'MX'; mexicoMetadata?: Record<string, unknown> } = {};
   try {
     body = await c.req.json();
   } catch {
@@ -330,6 +330,8 @@ intelligence.post('/reports/generate', requireScope('intel:read'), async (c) => 
       jobId: body.jobId,
       subjectName: body.subjectName,
       propertyAddress: body.propertyAddress,
+      jurisdiction: body.jurisdiction,
+      mexicoMetadata: body.mexicoMetadata,
     });
     return c.json({ ok: true, reportId, downloadUrl: `/api/v1/intelligence/reports/${reportId}/download` });
   } catch (err: unknown) {

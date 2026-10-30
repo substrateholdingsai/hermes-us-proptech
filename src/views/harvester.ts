@@ -187,7 +187,7 @@ export function harvesterView(): string {
         '<td class="py-2.5 font-mono text-vektor-sec">' + l.dealSizeFormatted + '</td>' +
         '<td class="py-2.5 space-x-1">' + badges.join(' ') + '</td>' +
         '<td class="py-2.5 font-mono text-vektor-sec text-[11px]">' + (l.phone || '—') + '</td>' +
-        '<td class="py-2.5 text-right"><a href="/docs" class="text-vektor-cyan hover:underline font-mono text-[11px]">Dossier PDF →</a></td>' +
+        '<td class="py-2.5 text-right"><button onclick="downloadDossier(' + JSON.stringify(l) + ')" class="text-vektor-cyan hover:underline font-mono text-[11px]">Dossier PDF</button></td>' +
       '</tr>';
     }).join('');
   }
@@ -227,6 +227,32 @@ export function harvesterView(): string {
     } catch (e) {
       status.textContent = 'Error: ' + e.message;
     }
+  }
+  async function downloadDossier(lead) {
+    try {
+      const res = await api('/api/v1/intelligence/reports/generate', { method: 'POST', body: JSON.stringify({ subjectName: lead.entityOrFundName, jurisdiction: currentJurisdiction, mexicoMetadata: lead.mexicoMetadata }) });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || 'Report failed'); return; }
+      const pdfRes = await api('/api/v1/intelligence/reports/' + data.reportId + '/download');
+      const blob = await pdfRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'Hermes-Dossier-' + data.reportId + '.pdf'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+  function exportCsv() {
+    if (!lastBatch) return;
+    const rows = [['Contact','Entity','Role','Jurisdiction','DealSize','Phone','Email','TCPA']];
+    lastBatch.leads.forEach(l => rows.push([l.primaryContactName,l.entityOrFundName,l.contactRole,l.jurisdiction,l.dealSizeFormatted,l.phone,l.email,l.isTcpaSafe]));
+    const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'hermes-harvest.csv'; a.click();
+    URL.revokeObjectURL(url);
   }
   loadSchedules();
     if (!lastBatch) return;
