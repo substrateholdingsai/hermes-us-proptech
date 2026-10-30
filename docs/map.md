@@ -69,7 +69,10 @@ hermes-us-proptech/
 
 ### Pendiente
 - [ ] Integración CRM Webhooks (HubSpot, Salesforce, Follow Up Boss)
-- [ ] Tests automatizados (Vitest / Miniflare)
+- [x] Tests automatizados (Vitest): unit + integration (30 tests OK)
 - [ ] CI/CD (GitHub Actions)
 - [ ] Documentación OpenAPI (Swagger)
 - [ ] Deploy a producción (`wrangler deploy`)
+
+
+
