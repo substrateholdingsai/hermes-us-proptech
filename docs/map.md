@@ -4,6 +4,10 @@
 
 ```
 hermes-us-proptech/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml              # CI: Typecheck + Vitest Suite
+│       └── deploy.yml          # CD: D1 Migrations + Wrangler Deploy
 ├── wrangler.jsonc
 ├── Dockerfile.sandbox
 ├── package.json
@@ -20,6 +24,9 @@ hermes-us-proptech/
 ├── scripts/
 │   ├── forge-vektor-assets.py
 │   └── pack-assets.js
+├── test/
+│   ├── unit/
+│   └── integration/
 └── src/
     ├── index.ts
     ├── types/
@@ -66,13 +73,10 @@ hermes-us-proptech/
 - [x] Dossiers ejecutivos PDF + R2 Storage & Download
 - [x] Frontend VEKTOR v1.0.0 (Hono Edge UI + Tailwind + Lucide + Alpine)
 - [x] Typecheck OK (0 errores)
+- [x] Tests automatizados (Vitest): unit + integration (30 tests OK)
+- [x] CI/CD (GitHub Actions: ci.yml + deploy.yml)
 
 ### Pendiente
 - [ ] Integración CRM Webhooks (HubSpot, Salesforce, Follow Up Boss)
-- [x] Tests automatizados (Vitest): unit + integration (30 tests OK)
-- [ ] CI/CD (GitHub Actions)
 - [ ] Documentación OpenAPI (Swagger)
 - [ ] Deploy a producción (`wrangler deploy`)
-
-
-
