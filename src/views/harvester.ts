@@ -29,25 +29,14 @@ export function harvesterView(): string {
       <div>
         <label class="text-[11px] font-mono text-vektor-mut uppercase mb-2 block">Jurisdiction</label>
         <select id="stateFilter" class="w-full bg-vektor-canvas border border-vektor-line rounded px-3 py-2 text-sm">
-          <optgroup id="usStates" label="United States">
-            <option value="">All Jurisdictions</option>
-            <option value="FL">Florida (FL)</option>
-            <option value="TX">Texas (TX)</option>
-            <option value="DE">Delaware (DE)</option>
-            <option value="NV">Nevada (NV)</option>
-            <option value="WY">Wyoming (WY)</option>
-            <option value="NY">New York (NY)</option>
-            <option value="CA">California (CA)</option>
-          </optgroup>
-          <optgroup id="mxStates" label="México" class="hidden">
-            <option value="">Todas las Entidades</option>
-            <option value="CDMX">CDMX</option>
-            <option value="NL">Nuevo León</option>
-            <option value="JAL">Jalisco</option>
-            <option value="QROO">Quintana Roo</option>
-            <option value="YUC">Yucatán</option>
-            <option value="BCS">Baja California Sur</option>
-          </optgroup>
+          <option value="">All Jurisdictions</option>
+          <option value="FL">Florida (FL)</option>
+          <option value="TX">Texas (TX)</option>
+          <option value="DE">Delaware (DE)</option>
+          <option value="NV">Nevada (NV)</option>
+          <option value="WY">Wyoming (WY)</option>
+          <option value="NY">New York (NY)</option>
+          <option value="CA">California (CA)</option>
         </select>
         <label class="text-[11px] font-mono text-vektor-mut uppercase mt-4 mb-2 block">Quantity</label>
         <select id="limitSelect" class="w-full bg-vektor-canvas border border-vektor-line rounded px-3 py-2 text-sm">
@@ -105,21 +94,43 @@ export function harvesterView(): string {
   <script>
   let lastBatch = null;
   let currentJurisdiction = 'US';
+  window.__harvestLeadsMap = {};
+
+  const US_STATES = [
+    { value: '', label: 'All Jurisdictions' },
+    { value: 'FL', label: 'Florida (FL)' },
+    { value: 'TX', label: 'Texas (TX)' },
+    { value: 'DE', label: 'Delaware (DE)' },
+    { value: 'NV', label: 'Nevada (NV)' },
+    { value: 'WY', label: 'Wyoming (WY)' },
+    { value: 'NY', label: 'New York (NY)' },
+    { value: 'CA', label: 'California (CA)' }
+  ];
+
+  const MX_STATES = [
+    { value: '', label: 'Todas las Entidades' },
+    { value: 'CDMX', label: 'CDMX (Polanco / Lomas)' },
+    { value: 'NL', label: 'Nuevo León (San Pedro)' },
+    { value: 'JAL', label: 'Jalisco (Zapopan)' },
+    { value: 'QROO', label: 'Quintana Roo (Tulum / Riviera)' },
+    { value: 'YUC', label: 'Yucatán (Mérida)' },
+    { value: 'BCS', label: 'Baja California Sur (Los Cabos)' }
+  ];
+
   function setJurisdiction(j) {
     currentJurisdiction = j;
     const usBtn = document.getElementById('jurUS');
     const mxBtn = document.getElementById('jurMX');
     const usSources = document.getElementById('usSources');
     const mxSources = document.getElementById('mxSources');
-    const usStates = document.getElementById('usStates');
-    const mxStates = document.getElementById('mxStates');
+    const stateFilter = document.getElementById('stateFilter');
+
     if (j === 'US') {
       usBtn.className = 'px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-bold text-sm';
       mxBtn.className = 'px-4 py-2 rounded border border-vektor-hi text-vektor-sec text-sm';
       usSources.classList.remove('hidden');
       mxSources.classList.add('hidden');
-      usStates.classList.remove('hidden');
-      mxStates.classList.add('hidden');
+      stateFilter.innerHTML = US_STATES.map(s => '<option value="' + s.value + '">' + s.label + '</option>').join('');
       const first = usSources.querySelector('input[name="source"]');
       if (first) first.checked = true;
     } else {
@@ -127,12 +138,12 @@ export function harvesterView(): string {
       usBtn.className = 'px-4 py-2 rounded border border-vektor-hi text-vektor-sec text-sm';
       mxSources.classList.remove('hidden');
       usSources.classList.add('hidden');
-      mxStates.classList.remove('hidden');
-      usStates.classList.add('hidden');
+      stateFilter.innerHTML = MX_STATES.map(s => '<option value="' + s.value + '">' + s.label + '</option>').join('');
       const first = mxSources.querySelector('input[name="source"]');
       if (first) first.checked = true;
     }
   }
+
   async function runHarvest() {
     const source = document.querySelector('input[name="source"]:checked').value;
     const state = document.getElementById('stateFilter').value;
@@ -167,13 +178,16 @@ export function harvesterView(): string {
       radar.classList.add('hidden');
     }
   }
+
   function renderResults(leads) {
     const tbody = document.getElementById('harvestResults');
-    if (!leads.length) {
+    if (!leads || !leads.length) {
       tbody.innerHTML = '<tr><td colspan="8" class="py-6 text-center text-vektor-mut">No leads found.</td></tr>';
       return;
     }
+    window.__harvestLeadsMap = window.__harvestLeadsMap || {};
     tbody.innerHTML = leads.map(l => {
+      window.__harvestLeadsMap[l.id] = l;
       const badges = [];
       if (l.accreditationBadge) badges.push('<span class="badge-info px-1.5 py-0.5 rounded text-[10px]">' + l.accreditationBadge + '</span>');
       if (l.dncStatus === 'clean') badges.push('<span class="badge-success px-1.5 py-0.5 rounded text-[10px]">REPEP Clean</span>');
@@ -187,10 +201,11 @@ export function harvesterView(): string {
         '<td class="py-2.5 font-mono text-vektor-sec">' + l.dealSizeFormatted + '</td>' +
         '<td class="py-2.5 space-x-1">' + badges.join(' ') + '</td>' +
         '<td class="py-2.5 font-mono text-vektor-sec text-[11px]">' + (l.phone || '—') + '</td>' +
-        '<td class="py-2.5 text-right"><button onclick="downloadDossier(' + JSON.stringify(l) + ')" class="text-vektor-cyan hover:underline font-mono text-[11px]">Dossier PDF</button></td>' +
+        '<td class="py-2.5 text-right"><button onclick="downloadDossier(\'' + l.id + '\')" class="text-vektor-cyan hover:underline font-mono text-[11px]">Dossier PDF</button></td>' +
       '</tr>';
     }).join('');
   }
+
   async function loadSchedules() {
     try {
       const res = await api('/api/v1/intelligence/harvest/schedules');
@@ -215,6 +230,7 @@ export function harvesterView(): string {
       console.warn('schedules load deferred', e);
     }
   }
+
   async function runSchedule(id) {
     const status = document.getElementById('harvestStatus');
     status.textContent = 'Running scheduled sweep...';
@@ -228,43 +244,52 @@ export function harvesterView(): string {
       status.textContent = 'Error: ' + e.message;
     }
   }
-  async function downloadDossier(lead) {
+
+  async function downloadDossier(id) {
+    const lead = (window.__harvestLeadsMap && window.__harvestLeadsMap[id]) || (lastBatch && lastBatch.leads.find(x => x.id === id));
+    if (!lead) {
+      alert('Lead data not found');
+      return;
+    }
     try {
-      const res = await api('/api/v1/intelligence/reports/generate', { method: 'POST', body: JSON.stringify({ subjectName: lead.entityOrFundName, jurisdiction: currentJurisdiction, mexicoMetadata: lead.mexicoMetadata }) });
+      const res = await api('/api/v1/intelligence/reports/generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          subjectName: lead.entityOrFundName,
+          jurisdiction: currentJurisdiction,
+          mexicoMetadata: lead.mexicoMetadata
+        })
+      });
       const data = await res.json();
       if (!res.ok) { alert(data.error || 'Report failed'); return; }
       const pdfRes = await api('/api/v1/intelligence/reports/' + data.reportId + '/download');
       const blob = await pdfRes.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'Hermes-Dossier-' + data.reportId + '.pdf'; a.click();
+      a.href = url;
+      a.download = 'Hermes-Dossier-' + (lead.jurisdiction || 'Lead') + '-' + data.reportId.slice(0, 8) + '.pdf';
+      a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert('Error: ' + e.message);
+      alert('Error downloading dossier: ' + e.message);
     }
   }
+
   function exportCsv() {
-    if (!lastBatch) return;
+    if (!lastBatch || !lastBatch.leads) return;
     const rows = [['Contact','Entity','Role','Jurisdiction','DealSize','Phone','Email','TCPA']];
-    lastBatch.leads.forEach(l => rows.push([l.primaryContactName,l.entityOrFundName,l.contactRole,l.jurisdiction,l.dealSizeFormatted,l.phone,l.email,l.isTcpaSafe]));
+    lastBatch.leads.forEach(l => rows.push([l.primaryContactName, l.entityOrFundName, l.contactRole, l.jurisdiction, l.dealSizeFormatted, l.phone, l.email, l.isTcpaSafe]));
     const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'hermes-harvest.csv'; a.click();
+    a.href = url;
+    a.download = 'hermes-harvest.csv';
+    a.click();
     URL.revokeObjectURL(url);
   }
+
   loadSchedules();
-    if (!lastBatch) return;
-    const rows = [['Contact','Entity','Role','Jurisdiction','DealSize','Phone','Email','TCPA']];
-    lastBatch.leads.forEach(l => rows.push([l.primaryContactName,l.entityOrFundName,l.contactRole,l.jurisdiction,l.dealSizeFormatted,l.phone,l.email,l.isTcpaSafe]));
-    const csv = rows.map(r => r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')).join('\\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'hermes-harvest.csv'; a.click();
-    URL.revokeObjectURL(url);
-  }
   </script>
   `;
   return layout('Harvester', body);
