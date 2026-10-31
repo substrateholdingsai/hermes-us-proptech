@@ -1,74 +1,74 @@
-import { layout } from './layout';
+﻿import { layout } from './layout';
 
 export function overviewView(): string {
   const body = `
   <div class="grid grid-cols-4 gap-4 mb-6">
     <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
-      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Total Equity Analyzed</div>
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Valor de Propiedades Analizadas</div>
       <div class="font-mono text-2xl text-vektor-cyan font-bold mt-1" id="kpiEquity">$1.2B</div>
-      <div class="text-[11px] text-vektor-green mt-1 flex items-center gap-1 font-mono"><span>↑</span> +4.2% historical volume</div>
+      <div class="text-[11px] text-vektor-green mt-1 flex items-center gap-1 font-mono"><span>â†‘</span> Patrimonio investigado en la plataforma</div>
     </div>
     <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
-      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Subjects Resolved</div>
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Dueños Reales Identificados</div>
       <div class="font-mono text-2xl text-vektor-pri font-bold mt-1" id="kpiSubjects">8,429</div>
-      <div class="text-[11px] text-vektor-sec mt-1 font-mono">3 sources cross-verified</div>
+      <div class="text-[11px] text-vektor-sec mt-1 font-mono">Personas físicas detrás de empresas y LLCs</div>
     </div>
     <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
-      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">TCPA Safe Ratio</div>
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Celulares Listos para Llamar</div>
       <div class="font-mono text-2xl text-vektor-green font-bold mt-1">99.2%</div>
-      <div class="mt-1"><span class="badge-success text-[10px] px-2 py-0.5 rounded font-mono">DNC CLEAN</span></div>
+      <div class="mt-1"><span class="badge-success text-[10px] px-2 py-0.5 rounded font-mono">NÚMEROS VERIFICADOS</span></div>
     </div>
     <div class="vektor-kpi bg-vektor-surface border border-vektor-line rounded p-4">
-      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Available Credits</div>
+      <div class="text-xs text-vektor-sec uppercase font-mono tracking-wider">Créditos Disponibles</div>
       <div class="font-mono text-2xl text-vektor-cyan font-bold mt-1" id="credits">1,000</div>
-      <div class="text-[11px] text-vektor-sec mt-1 font-mono" id="creditsDesc">workspace: default · starter</div>
+      <div class="text-[11px] text-vektor-sec mt-1 font-mono" id="creditsDesc">1 crédito por dato o consulta</div>
     </div>
   </div>
 
   <div class="bg-vektor-surface border border-vektor-hi rounded-lg p-5 mb-6 vektor-scanline">
     <div class="flex items-center justify-between mb-2">
       <label class="font-mono text-xs text-vektor-cyan tracking-wider uppercase flex items-center gap-2">
-        <span class="w-1.5 h-1.5 rounded-full bg-vektor-cyan"></span> UNIFIED PROBE LAUNCHPAD
+        <span class="w-1.5 h-1.5 rounded-full bg-vektor-cyan"></span> BUSCADOR UNIVERSAL DE PROPIETARIOS E INVERSIONISTAS
       </label>
-      <span class="text-[11px] text-vektor-mut font-mono">Press ENTER to launch probe</span>
+      <span class="text-[11px] text-vektor-mut font-mono">Presiona ENTER para buscar al instante</span>
     </div>
     <div class="flex gap-2">
       <input id="probeInput" autofocus 
         onkeydown="if(event.key==='Enter')probe();" 
-        placeholder="Enter LLC name, street address, target name, CIK, phone or APN..." 
+        placeholder="Escribe el nombre de un dueño, empresa (LLC o SAPI), dirección de propiedad o teléfono..." 
         class="flex-1 bg-vektor-canvas border border-vektor-line rounded px-4 py-3 text-sm focus:border-vektor-cyan outline-none transition font-sans text-vektor-pri" />
       <button onclick="probe()" class="px-6 py-3 bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-sm tracking-wide rounded transition flex items-center gap-2">
-        <span>PROBE TARGET</span>
+        <span>BUSCAR AHORA</span>
       </button>
     </div>
     <div class="flex items-center gap-3 mt-3 text-[11px] text-vektor-mut">
-      <span>Quick examples:</span>
-      <button onclick="quickProbe('Apex Capital Partners LLC')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">Apex Capital Partners LLC (SOS)</button>
-      <span>·</span>
-      <button onclick="quickProbe('742 Evergreen Terrace, Miami FL')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">742 Evergreen Terrace (Equity)</button>
-      <span>·</span>
-      <button onclick="quickProbe('David S. Miller')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">David S. Miller (SEC/FINRA)</button>
+      <span>Ejemplos rápidos:</span>
+      <button onclick="quickProbe('Apex Capital Partners LLC')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">Apex Capital Partners LLC (Empresa)</button>
+      <span>Â·</span>
+      <button onclick="quickProbe('742 Evergreen Terrace, Miami FL')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">742 Evergreen Terrace (Propiedad)</button>
+      <span>Â·</span>
+      <button onclick="quickProbe('David S. Miller')" class="text-vektor-sec hover:text-vektor-cyan font-mono transition">David S. Miller (Inversionista)</button>
     </div>
   </div>
 
   <div class="bg-vektor-surface border border-vektor-line rounded p-4">
     <div class="flex items-center justify-between mb-3">
       <div>
-        <h3 class="font-display font-bold text-sm text-vektor-pri tracking-wide">Recent Investigated Hits</h3>
-        <p class="text-[11px] text-vektor-sec">Real-time audit log of resolved entities, properties, and skip-trace targets</p>
+        <h3 class="font-display font-bold text-sm text-vektor-pri tracking-wide">Historial de Búsquedas Recientes</h3>
+        <p class="text-[11px] text-vektor-sec">Personas, empresas y propiedades consultadas recientemente.</p>
       </div>
-      <a href="/dashboard/explorer" class="text-xs text-vektor-cyan hover:underline font-mono">View All Explorer →</a>
+      <a href="/dashboard/explorer" class="text-xs text-vektor-cyan hover:underline font-mono">View All Explorer â†’</a>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-xs">
         <thead>
           <tr class="text-vektor-sec text-left border-b border-vektor-line">
-            <th class="py-2.5 font-medium">Target / Entity</th>
-            <th class="py-2.5 font-medium">Type</th>
-            <th class="py-2.5 font-medium">Location / State</th>
-            <th class="py-2.5 font-medium">Confidence</th>
-            <th class="py-2.5 font-medium">Compliance</th>
-            <th class="py-2.5 text-right font-medium">Action</th>
+            <th class="py-2.5 font-medium">Persona / Empresa</th>
+            <th class="py-2.5 font-medium">Tipo</th>
+            <th class="py-2.5 font-medium">Ubicación</th>
+            <th class="py-2.5 font-medium">Certeza</th>
+            <th class="py-2.5 font-medium">Estado de Contacto</th>
+            <th class="py-2.5 text-right font-medium">Acción</th>
           </tr>
         </thead>
         <tbody id="hits" class="divide-y divide-vektor-line">
@@ -126,7 +126,7 @@ export function overviewView(): string {
         allHits.push({
           name: r.subject_name || 'Subject',
           type: 'SKIP-TRACE',
-          state: r.dnc_status === 'clean' ? 'DNC CLEAN' : 'FLAGGED',
+          state: r.dnc_status === 'clean' ? 'NÚMEROS VERIFICADOS' : 'FLAGGED',
           isClean: r.dnc_status === 'clean',
           confidence: Math.round((r.confidence || 0.85) * 100) + '%',
           isTarget: true
@@ -148,7 +148,7 @@ export function overviewView(): string {
         hitsEl.innerHTML = '<tr><td colspan="6" class="py-6 text-center text-vektor-mut">' +
           '<div class="text-vektor-pri font-medium mb-1">No investigated targets logged yet in workspace</div>' +
           '<div class="text-xs text-vektor-sec mb-3">Launch your first probe in the Launchpad to resolve an LLC, property, or contact.</div>' +
-          '<a href="/dashboard/launchpad" class="inline-block px-3 py-1.5 text-xs bg-vektor-cyan text-vektor-void font-bold rounded">Open Investigative Probes →</a>' +
+          '<a href="/dashboard/launchpad" class="inline-block px-3 py-1.5 text-xs bg-vektor-cyan text-vektor-void font-bold rounded">Open Investigative Probes â†’</a>' +
           '</td></tr>';
         return;
       }
@@ -163,7 +163,7 @@ export function overviewView(): string {
           '<td class="py-2.5 font-mono text-vektor-cyan">' + h.state + '</td>' +
           '<td class="py-2.5 font-mono text-vektor-sec">' + h.confidence + '</td>' +
           '<td class="py-2.5">' + badge + '</td>' +
-          '<td class="py-2.5 text-right"><a href="/dashboard/launchpad?q=' + encodeURIComponent(h.name) + '" class="text-vektor-cyan hover:underline font-mono text-[11px]">Inspect →</a></td>' +
+          '<td class="py-2.5 text-right"><a href="/dashboard/launchpad?q=' + encodeURIComponent(h.name) + '" class="text-vektor-cyan hover:underline font-mono text-[11px]">Inspect â†’</a></td>' +
         '</tr>';
       }).join('');
 

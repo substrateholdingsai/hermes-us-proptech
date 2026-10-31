@@ -1,15 +1,15 @@
-import { layout } from './layout';
+﻿import { layout } from './layout';
 
 export function explorerView(): string {
   const body = `
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h2 class="font-display text-2xl font-bold tracking-tight">Target & Forensics Explorer</h2>
-      <p class="text-xs text-vektor-sec mt-1">Cross-database records with tabular precision and compliance verification</p>
+      <h2 class="font-display text-2xl font-bold tracking-tight">Directorio de Contactos e Investigaciones Guardadas</h2>
+      <p class="text-xs text-vektor-sec mt-1">Base de datos de personas, empresas y propiedades que has consultado en tu espacio de trabajo.</p>
     </div>
     <div class="flex gap-2">
       <button onclick="loadExplorerData()" class="px-3 py-1.5 text-xs bg-vektor-surface-2 border border-vektor-line hover:border-vektor-cyan text-vektor-sec hover:text-vektor-pri rounded flex items-center gap-1.5 transition">
-        <span>↻ Refresh</span>
+        <span>â†» Refresh</span>
       </button>
     </div>
   </div>
@@ -24,7 +24,7 @@ export function explorerView(): string {
     <!-- TAB 1: TARGETS -->
     <div x-show="tab==='targets'" class="bg-vektor-surface border border-vektor-line rounded p-4">
       <div class="flex justify-between items-center mb-3">
-        <input id="targetSearch" oninput="filterTargets()" placeholder="Filter targets by name, phone or email..." class="w-72 bg-vektor-canvas border border-vektor-line rounded px-3 py-1.5 text-xs focus:border-vektor-cyan outline-none" />
+        <input id="targetSearch" oninput="filterTargets()" placeholder="Filtrar por nombre, empresa o estado..." class="w-72 bg-vektor-canvas border border-vektor-line rounded px-3 py-1.5 text-xs focus:border-vektor-cyan outline-none" />
         <span id="targetCount" class="text-xs font-mono text-vektor-mut">0 records</span>
       </div>
       <div class="overflow-x-auto">
@@ -49,7 +49,7 @@ export function explorerView(): string {
     <!-- TAB 2: PROPERTIES -->
     <div x-show="tab==='props'" class="bg-vektor-surface border border-vektor-line rounded p-4" style="display:none">
       <div class="flex justify-between items-center mb-3">
-        <input id="propSearch" oninput="filterProps()" placeholder="Filter by address, county or state..." class="w-72 bg-vektor-canvas border border-vektor-line rounded px-3 py-1.5 text-xs focus:border-vektor-cyan outline-none" />
+        <input id="propSearch" oninput="filterProps()" placeholder="Filtrar por nombre, empresa o estado..." class="w-72 bg-vektor-canvas border border-vektor-line rounded px-3 py-1.5 text-xs focus:border-vektor-cyan outline-none" />
         <span id="propCount" class="text-xs font-mono text-vektor-mut">0 records</span>
       </div>
       <div class="overflow-x-auto">
@@ -74,7 +74,7 @@ export function explorerView(): string {
     <!-- TAB 3: ENTITIES -->
     <div x-show="tab==='ents'" class="bg-vektor-surface border border-vektor-line rounded p-4" style="display:none">
       <div class="flex justify-between items-center mb-3">
-        <input id="entSearch" oninput="filterEntities()" placeholder="Filter by entity name, state or UBO..." class="w-72 bg-vektor-canvas border border-vektor-line rounded px-3 py-1.5 text-xs focus:border-vektor-cyan outline-none" />
+        <input id="entSearch" oninput="filterEntities()" placeholder="Filtrar por nombre, empresa o estado..." class="w-72 bg-vektor-canvas border border-vektor-line rounded px-3 py-1.5 text-xs focus:border-vektor-cyan outline-none" />
         <span id="entCount" class="text-xs font-mono text-vektor-mut">0 records</span>
       </div>
       <div class="overflow-x-auto">
@@ -129,11 +129,11 @@ export function explorerView(): string {
       const dncBadge = isClean ? '<span class="badge-success px-1.5 py-0.5 rounded text-[10px]">DNC CLEAN</span>' : '<span class="badge-danger px-1.5 py-0.5 rounded text-[10px]">FLAGGED</span>';
       const lineBadge = isMobile ? '<span class="badge-info px-1.5 py-0.5 rounded text-[10px]">MOBILE</span>' : '<span class="badge-warning px-1.5 py-0.5 rounded text-[10px]">' + (t.line_type || 'UNKNOWN').toUpperCase() + '</span>';
       return '<tr class="hover:bg-vektor-surface-2/60 transition">' +
-        '<td class="py-2.5 font-medium text-vektor-pri">' + (t.subject_name || '—') + '</td>' +
-        '<td class="py-2.5 font-mono text-vektor-cyan">' + (t.phone || '—') + '</td>' +
+        '<td class="py-2.5 font-medium text-vektor-pri">' + (t.subject_name || 'â€”') + '</td>' +
+        '<td class="py-2.5 font-mono text-vektor-cyan">' + (t.phone || 'â€”') + '</td>' +
         '<td class="py-2.5">' + lineBadge + '</td>' +
         '<td class="py-2.5">' + dncBadge + '</td>' +
-        '<td class="py-2.5 font-mono text-vektor-sec">' + (t.email || '—') + '</td>' +
+        '<td class="py-2.5 font-mono text-vektor-sec">' + (t.email || 'â€”') + '</td>' +
         '<td class="py-2.5 font-mono text-vektor-sec">' + Math.round((t.confidence || 0) * 100) + '%</td>' +
       '</tr>';
     }).join('');
@@ -173,8 +173,8 @@ export function explorerView(): string {
         ? '<span class="badge-success px-1.5 py-0.5 rounded text-[10px] font-sans">EQUITY ' + equityPct + '%</span>'
         : '<span class="badge-warning px-1.5 py-0.5 rounded text-[10px] font-sans">EQUITY ' + equityPct + '%</span>';
       return '<tr class="hover:bg-vektor-surface-2/60 transition">' +
-        '<td class="py-2.5 text-vektor-pri font-sans">' + (p.address || '—') + '</td>' +
-        '<td class="py-2.5 text-vektor-sec font-sans">' + (p.county || '—') + ', ' + (p.state || '—') + '</td>' +
+        '<td class="py-2.5 text-vektor-pri font-sans">' + (p.address || 'â€”') + '</td>' +
+        '<td class="py-2.5 text-vektor-sec font-sans">' + (p.county || 'â€”') + ', ' + (p.state || 'â€”') + '</td>' +
         '<td class="py-2.5 text-right text-vektor-pri">' + formatDollar(p.market_value_cents) + '</td>' +
         '<td class="py-2.5 text-right text-vektor-sec">' + formatDollar(p.mortgage_balance_cents) + '</td>' +
         '<td class="py-2.5 text-right text-vektor-cyan font-bold">' + formatDollar(p.equity_cents) + '</td>' +
@@ -217,11 +217,11 @@ export function explorerView(): string {
         ? '<span class="badge-success px-1.5 py-0.5 rounded text-[10px]">RESOLVED</span>' 
         : '<span class="badge-warning px-1.5 py-0.5 rounded text-[10px]">' + (e.status || 'PENDING').toUpperCase() + '</span>';
       return '<tr class="hover:bg-vektor-surface-2/60 transition">' +
-        '<td class="py-2.5 font-medium text-vektor-pri">' + (e.entity_name || '—') + '</td>' +
-        '<td class="py-2.5 font-mono text-vektor-cyan">' + (e.state_of_formation || '—') + '</td>' +
-        '<td class="py-2.5 font-mono text-vektor-sec">' + (e.sos_filing_number || '—') + '</td>' +
-        '<td class="py-2.5 text-vektor-sec">' + (e.registered_agent || '—') + '</td>' +
-        '<td class="py-2.5 font-medium text-vektor-cyan">' + (e.ubo_name || '—') + '</td>' +
+        '<td class="py-2.5 font-medium text-vektor-pri">' + (e.entity_name || 'â€”') + '</td>' +
+        '<td class="py-2.5 font-mono text-vektor-cyan">' + (e.state_of_formation || 'â€”') + '</td>' +
+        '<td class="py-2.5 font-mono text-vektor-sec">' + (e.sos_filing_number || 'â€”') + '</td>' +
+        '<td class="py-2.5 text-vektor-sec">' + (e.registered_agent || 'â€”') + '</td>' +
+        '<td class="py-2.5 font-medium text-vektor-cyan">' + (e.ubo_name || 'â€”') + '</td>' +
         '<td class="py-2.5">' + badge + '</td>' +
       '</tr>';
     }).join('');

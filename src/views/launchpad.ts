@@ -1,26 +1,26 @@
-import { layout } from './layout';
+﻿import { layout } from './layout';
 
 export function launchpadView(): string {
   const body = `
   <div class="flex items-center justify-between mb-4">
     <div>
-      <h2 class="font-display text-2xl font-bold tracking-tight">Investigative Probes Console</h2>
-      <p class="text-xs text-vektor-sec mt-1">Multi-oracle due diligence: Corporate SOS, County Property, SEC/FINRA and TCPA Skip-Tracing</p>
+      <h2 class="font-display text-2xl font-bold tracking-tight">Buscador Especializado de Dueños y Propiedades</h2>
+      <p class="text-xs text-vektor-sec mt-1">Consulta registros corporativos, escrituras de propiedad, licencias financieras y teléfonos verificados.</p>
     </div>
   </div>
 
   <div x-data="{ tab: 'sos', loading: false, result: null, error: null }" class="space-y-4">
     <div class="flex gap-2 text-xs border-b border-vektor-line pb-2">
-      <button @click="tab='sos'; result=null; error=null" :class="tab==='sos' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">1 · Corporate SOS Oracle</button>
-      <button @click="tab='prop'; result=null; error=null" :class="tab==='prop' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">2 · Property & Equity</button>
-      <button @click="tab='sec'; result=null; error=null" :class="tab==='sec' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">3 · SEC EDGAR & FINRA</button>
-      <button @click="tab='skip'; result=null; error=null" :class="tab==='skip' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">4 · TCPA Skip-Tracing</button>
+      <button @click="tab='sos'; result=null; error=null" :class="tab==='sos' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">1 · Desenmascarar Dueño de Empresa (LLC o SAPI)</button>
+      <button @click="tab='prop'; result=null; error=null" :class="tab==='prop' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">2 · Valor y Deuda de la Propiedad</button>
+      <button @click="tab='sec'; result=null; error=null" :class="tab==='sec' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">3 · Verificar Fondos y Licencias Financieras</button>
+      <button @click="tab='skip'; result=null; error=null" :class="tab==='skip' ? 'bg-vektor-cyan text-vektor-void font-bold' : 'bg-vektor-surface-2 text-vektor-sec hover:text-vektor-pri'" class="px-3.5 py-1.5 rounded transition">4 · Conseguir Celular y Correo del Dueño</button>
     </div>
 
     <!-- PANE 1: SOS -->
     <div x-show="tab==='sos'" class="bg-vektor-surface border border-vektor-line rounded p-5 space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-display font-semibold text-vektor-pri">Corporate SOS & UBO Unmasking</h3>
+        <h3 class="text-sm font-display font-semibold text-vektor-pri">Desenmascarar Dueño de Empresa (LLC o SAPI)</h3>
         <span class="text-[10px] font-mono text-vektor-cyan bg-vektor-cyan/10 border border-vektor-cyan/30 px-2 py-0.5 rounded">COST: 5 CREDITS</span>
       </div>
       <div class="grid grid-cols-3 gap-3">
@@ -31,23 +31,23 @@ export function launchpadView(): string {
         <div>
           <label class="text-[11px] font-mono text-vektor-sec block mb-1">JURISDICTION</label>
           <select id="sosState" class="w-full bg-vektor-canvas border border-vektor-line focus:border-vektor-cyan rounded px-3 py-2 text-xs font-mono outline-none text-vektor-pri">
-            <option value="DE">Delaware (DE) · ICIS Registry</option>
-            <option value="WY">Wyoming (WY) · Privacy State</option>
-            <option value="NV">Nevada (NV) · SilverFlume</option>
-            <option value="FL">Florida (FL) · Sunbiz</option>
-            <option value="TX">Texas (TX) · Comptroller</option>
+            <option value="DE">Delaware (DE) Â· ICIS Registry</option>
+            <option value="WY">Wyoming (WY) Â· Privacy State</option>
+            <option value="NV">Nevada (NV) Â· SilverFlume</option>
+            <option value="FL">Florida (FL) Â· Sunbiz</option>
+            <option value="TX">Texas (TX) Â· Comptroller</option>
           </select>
         </div>
       </div>
       <button @click="loading=true; result=null; error=null; runSos()" :disabled="loading" class="px-5 py-2 bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-xs rounded transition flex items-center gap-2">
-        <span x-text="loading ? 'PROBING SOS REGISTRIES...' : 'RESOLVE ENTITY & UBO'"></span>
+        <span x-text="loading ? 'PROBING SOS REGISTRIES...' : 'DESCUBRIR DUEÑO REAL Y SOCIOS'"></span>
       </button>
     </div>
 
     <!-- PANE 2: PROPERTY -->
     <div x-show="tab==='prop'" class="bg-vektor-surface border border-vektor-line rounded p-5 space-y-4" style="display:none">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-display font-semibold text-vektor-pri">Deed & Mortgage Equity Forensics</h3>
+        <h3 class="text-sm font-display font-semibold text-vektor-pri">Valor y Deuda de la Propiedad</h3>
         <span class="text-[10px] font-mono text-vektor-cyan bg-vektor-cyan/10 border border-vektor-cyan/30 px-2 py-0.5 rounded">COST: 8 CREDITS</span>
       </div>
       <div class="grid grid-cols-3 gap-3">
@@ -61,14 +61,14 @@ export function launchpadView(): string {
         </div>
       </div>
       <button @click="loading=true; result=null; error=null; runProp()" :disabled="loading" class="px-5 py-2 bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-xs rounded transition flex items-center gap-2">
-        <span x-text="loading ? 'CROSS-REFERENCING CADASTRAL RECORDS...' : 'ANALYZE PROPERTY & MORTGAGES'"></span>
+        <span x-text="loading ? 'CROSS-REFERENCING CADASTRAL RECORDS...' : 'ANALIZAR VALOR Y DEUDA HIPOTECARIA'"></span>
       </button>
     </div>
 
     <!-- PANE 3: SEC -->
     <div x-show="tab==='sec'" class="bg-vektor-surface border border-vektor-line rounded p-5 space-y-4" style="display:none">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-display font-semibold text-vektor-pri">SEC EDGAR (Reg D / ADV) & FINRA Rule 501 Check</h3>
+        <h3 class="text-sm font-display font-semibold text-vektor-pri">Verificar Fondos y Licencias Financieras</h3>
         <span class="text-[10px] font-mono text-vektor-cyan bg-vektor-cyan/10 border border-vektor-cyan/30 px-2 py-0.5 rounded">COST: 3 CREDITS</span>
       </div>
       <div class="grid grid-cols-2 gap-3">
@@ -82,14 +82,14 @@ export function launchpadView(): string {
         </div>
       </div>
       <button @click="loading=true; result=null; error=null; runSec()" :disabled="loading" class="px-5 py-2 bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-xs rounded transition flex items-center gap-2">
-        <span x-text="loading ? 'QUERYING EDGAR & FINRA BROKERCHECK...' : 'VERIFY ACCREDITATION (RULE 501)'"></span>
+        <span x-text="loading ? 'QUERYING EDGAR & FINRA BROKERCHECK...' : 'COMPROBAR REGISTRO FINANCIERO'"></span>
       </button>
     </div>
 
     <!-- PANE 4: SKIP TRACE -->
     <div x-show="tab==='skip'" class="bg-vektor-surface border border-vektor-line rounded p-5 space-y-4" style="display:none">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-display font-semibold text-vektor-pri">TCPA-Compliant Skip-Tracing & Carrier Lookup</h3>
+        <h3 class="text-sm font-display font-semibold text-vektor-pri">Conseguir Celular y Correo del Dueño</h3>
         <span class="text-[10px] font-mono text-vektor-cyan bg-vektor-cyan/10 border border-vektor-cyan/30 px-2 py-0.5 rounded">COST: 10 CREDITS</span>
       </div>
       <div class="grid grid-cols-2 gap-3">
@@ -103,7 +103,7 @@ export function launchpadView(): string {
         </div>
       </div>
       <button @click="loading=true; result=null; error=null; runSkip()" :disabled="loading" class="px-5 py-2 bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-xs rounded transition flex items-center gap-2">
-        <span x-text="loading ? 'SCRUBBING DNC & CARRIER NETWORKS...' : 'EXECUTE TCPA SKIP-TRACE'"></span>
+        <span x-text="loading ? 'SCRUBBING DNC & CARRIER NETWORKS...' : 'LOCALIZAR CELULARES VERIFICADOS'"></span>
       </button>
     </div>
 
@@ -188,7 +188,7 @@ export function launchpadView(): string {
         '<div><span class="text-vektor-mut block">Market Value:</span> <strong class="text-vektor-pri font-mono text-base">' + mkt + '</strong></div>' +
         '<div><span class="text-vektor-mut block">Mortgage Balance:</span> <strong class="text-vektor-sec font-mono text-base">' + (p.mortgage_balance_cents ? '$' + Math.round(p.mortgage_balance_cents / 100).toLocaleString() : '$330,000') + '</strong></div>' +
         '<div><span class="text-vektor-mut block">Net Equity:</span> <strong class="text-vektor-cyan font-mono text-base">' + eq + '</strong></div>' +
-        '<div class="col-span-3 text-xs text-vektor-sec">Tax Assessment: clean status · No foreclosure or tax lien recorded.</div>' +
+        '<div class="col-span-3 text-xs text-vektor-sec">Tax Assessment: clean status Â· No foreclosure or tax lien recorded.</div>' +
       '</div>';
       showResult('Property Equity: ' + addr, badge, summary, data, job.id);
     } catch (e) {
@@ -209,7 +209,7 @@ export function launchpadView(): string {
         '<div><span class="text-vektor-mut block">Investor Classification:</span> <strong class="text-vektor-green font-mono">Accredited (Rule 501(a)(10))</strong></div>' +
         '<div><span class="text-vektor-mut block">FINRA Active Licenses:</span> <strong class="text-vektor-cyan font-mono">Series 65, Series 63</strong></div>' +
         '<div><span class="text-vektor-mut block">SEC Form D Syndication:</span> <strong class="text-vektor-pri font-mono">Reg D 506(b) Active</strong></div>' +
-        '<div><span class="text-vektor-mut block">Disciplinary History:</span> <strong class="text-vektor-green font-mono">Clean · 0 Disclosures</strong></div>' +
+        '<div><span class="text-vektor-mut block">Disciplinary History:</span> <strong class="text-vektor-green font-mono">Clean Â· 0 Disclosures</strong></div>' +
       '</div>';
       showResult('Accreditation: ' + (subject || entity), badge, summary, data, job.id);
     } catch (e) {
@@ -226,7 +226,7 @@ export function launchpadView(): string {
       const job = data.job || {};
       const st = job.resultPayload || {};
       const phone = st.phone || '+1 (305) 555-0194';
-      const badge = '<span class="badge-success text-[10px] px-2 py-0.5 rounded font-mono">DNC CLEAN · TCPA SAFE</span>';
+      const badge = '<span class="badge-success text-[10px] px-2 py-0.5 rounded font-mono">DNC CLEAN Â· TCPA SAFE</span>';
       const summary = '<div class="grid grid-cols-2 gap-3 bg-vektor-canvas p-3 rounded border border-vektor-line">' +
         '<div><span class="text-vektor-mut block">Primary Phone:</span> <strong class="text-vektor-cyan font-mono text-sm">' + phone + '</strong> <span class="badge-info text-[9px] px-1.5 py-0.5 rounded">MOBILE</span></div>' +
         '<div><span class="text-vektor-mut block">Carrier Network:</span> <strong class="text-vektor-pri font-mono">Verizon Wireless</strong></div>' +

@@ -1,5 +1,5 @@
-export function layout(title: string, body: string): string {
-  return `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} · VEKTOR</title>
+﻿export function layout(title: string, body: string): string {
+  return `<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} Â· VEKTOR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -28,41 +28,41 @@ body{font-family:Inter,sans-serif;background:#0A0E14;color:#E6EDF3;}
         <span>VEKTOR</span>
         <span class="text-[9px] font-mono uppercase bg-vektor-cyan/15 text-vektor-cyan px-1.5 py-0.5 rounded border border-vektor-cyan/30">OPS</span>
       </div>
-      <div class="text-[10px] font-mono text-vektor-mut tracking-wider">SKIP TRACING INTEL</div>
+      <div class="text-[10px] font-mono text-vektor-mut tracking-wider">INTELIGENCIA INMOBILIARIA</div>
     </div>
   </div>
 
   <nav class="flex flex-col gap-1 text-xs font-medium">
     <a href="/dashboard" class="flex items-center gap-2.5 px-3 py-2.5 rounded transition ${title === 'Console' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
-      <span>Console / Overview</span>
+      <span>Panel Principal</span>
     </a>
     <a href="/dashboard/launchpad" class="flex items-center gap-2.5 px-3 py-2.5 rounded transition ${title === 'Probes' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
-      <span>Investigative Probes</span>
+      <span>Buscador de Dueños y Propiedades</span>
     </a>
     <a href="/dashboard/explorer" class="flex items-center gap-2.5 px-3 py-2.5 rounded transition ${title === 'Explorer' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
-      <span>Target Explorer</span>
+      <span>Directorio y Contactos Guardados</span>
     </a>
     <a href="/dashboard/harvester" class="flex items-center justify-between px-3 py-2.5 rounded transition ${title === 'Harvester' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
-      <span>Lead Harvester</span>
+      <span>Encontrar Compradores</span>
       <span class="badge-info text-[10px] px-1.5 py-0.5 rounded font-mono">HOT</span>
     </a>
     <a href="/dashboard/dossier" class="flex items-center gap-2.5 px-3 py-2.5 rounded transition ${title === 'Dossier' ? 'bg-vektor-cyan/15 text-vektor-cyan font-semibold border border-vektor-cyan/30' : 'text-vektor-sec hover:text-vektor-pri hover:bg-vektor-surface-2'}">
-      <span>Dossier & PDF Export</span>
+      <span>Reportes y Expedientes PDF</span>
     </a>
     <div class="border-t border-vektor-line my-2"></div>
     <a href="/docs" target="_blank" class="flex items-center justify-between px-3 py-2.5 rounded transition text-vektor-sec hover:text-vektor-cyan hover:bg-vektor-surface-2">
-      <span>API Docs (Swagger)</span>
-      <span class="text-[10px] font-mono">↗</span>
+      <span>Documentación Técnica (API)</span>
+      <span class="text-[10px] font-mono">â†—</span>
     </a>
     <a href="/" target="_blank" class="flex items-center justify-between px-3 py-2.5 rounded transition text-vektor-sec hover:text-vektor-cyan hover:bg-vektor-surface-2">
-      <span>Public Landing</span>
-      <span class="text-[10px] font-mono">↗</span>
+      <span>Página de Inicio Pública</span>
+      <span class="text-[10px] font-mono">â†—</span>
     </a>
   </nav>
 
   <div class="mt-auto bg-vektor-canvas border border-vektor-line rounded p-3">
     <div class="flex justify-between items-center text-[11px] mb-1.5 font-mono">
-      <span class="text-vektor-mut">CREDITS</span>
+      <span class="text-vektor-mut">CRÉDITOS DISPONIBLES</span>
       <span class="text-vektor-cyan font-semibold" id="sidebarCredits">1,000</span>
     </div>
     <div class="w-full bg-vektor-surface rounded-full h-1.5 overflow-hidden">
@@ -79,13 +79,13 @@ body{font-family:Inter,sans-serif;background:#0A0E14;color:#E6EDF3;}
   <header class="h-12 bg-vektor-canvas border-b border-vektor-line flex items-center justify-between px-6 text-xs shrink-0 select-none">
     <div class="flex items-center gap-2.5">
       <span class="w-2 h-2 rounded-full bg-vektor-green pulse"></span>
-      <span class="font-mono text-vektor-green font-medium tracking-wide">SYSTEM OPERATIONAL · vektor-ops</span>
+      <span class="font-mono text-vektor-green font-medium tracking-wide">SYSTEM OPERATIONAL Â· vektor-ops</span>
     </div>
     <div class="flex items-center gap-4">
-      <div class="font-mono text-vektor-cyan text-xs">47 HITS · 24h</div>
+      <div class="font-mono text-vektor-cyan text-xs">47 HITS Â· 24h</div>
       <div class="h-3 w-px bg-vektor-line"></div>
       <button onclick="openKeyModal()" class="flex items-center gap-1.5 font-mono text-xs text-vektor-sec hover:text-vektor-cyan transition bg-vektor-surface border border-vektor-line px-2.5 py-1 rounded">
-        <span>⚙ API Key</span>
+        <span>âš™ API Key</span>
         <span class="text-[10px] text-vektor-cyan" id="keyPrefixBadge">hermes_d...</span>
       </button>
     </div>
