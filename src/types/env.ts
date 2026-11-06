@@ -9,6 +9,8 @@ export interface Env {
   DB: D1Database;
   R2: R2Bucket;
   HERMES_SANDBOX?: DurableObjectNamespace;
+  HERMES_STAYPUFT_API_KEY?: string;
+  STAYPUFT_API_KEY?: string;
   RENTCAST_API_KEY?: string;
   ATTOM_API_KEY?: string;
   TWILIO_ACCOUNT_SID?: string;

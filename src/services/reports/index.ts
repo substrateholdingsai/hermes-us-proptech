@@ -87,5 +87,14 @@ export async function generateExecutiveDossier(env: Env, params: GenerateReportP
 
   const pdf = await generateDossierPdf(data);
   const key = await saveReportPdfToR2(env, params.tenantId, reportId, pdf);
+  try {
+    await env.DB.prepare(
+      `INSERT INTO reports (id, tenant_id, type, subject, status, created_at, credits_used, pdf_key, pdf_url, executive_summary, findings)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(reportId, params.tenantId, 'dossier', subject, 'completed', new Date().toISOString(), 0, key, key, null, null)
+      .run();
+  } catch {
+  }
   return { reportId, key };
 }
