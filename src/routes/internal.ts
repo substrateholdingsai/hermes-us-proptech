@@ -1,5 +1,8 @@
 import { Hono } from 'hono';
 import type { Env } from '../types/env';
+import { newId, nowIso } from '../services/db';
+import { generateExecutiveDossier } from '../services/reports';
+import { getTenantBalance, hasSufficientCredits, deductCredits } from '../services/credits';
 
 export const internal = new Hono<{ Bindings: Env }>();
 
@@ -339,5 +342,175 @@ internal.post('/users', async (c) => {
 
   return c.json({ ok: true, user: { id, email, name, role, tenant_id: tenantId } }, 201);
 });
+const ALLOWED_SUBJECT_TYPES = new Set(['entity', 'property', 'investor']);
+const ALLOWED_STATES = new Set(['TX', 'FL', 'WY', 'DE', 'NV']);
+const TASK_COSTS: Record<string, number> = {
+  entity_resolution: 5,
+  property_equity: 8,
+  sec_validation: 3,
+  skip_trace: 10,
+};
+const ALL_TASKS = ['entity_resolution', 'property_equity', 'sec_validation', 'skip_trace'];
+
+internal.post('/reports/generate', async (c) => {
+  let body: any = {};
+  try { body = await c.req.json(); } catch { body = {}; }
+
+  const tenantId = String(body?.tenant_id ?? body?.tenantId ?? '').trim();
+  const subject = String(body?.subject ?? '').trim();
+  const subjectType = body?.subject_type ?? body?.subjectType ?? null;
+  const state = body?.state ?? null;
+  const tasksRaw = Array.isArray(body?.tasks) ? body.tasks : ALL_TASKS;
+  const tasks = tasksRaw.map((t: any) => String(t).trim()).filter(Boolean);
+  const dryRun = body?.dry_run === true || body?.dryRun === true;
+
+  if (!tenantId) {
+    return c.json({ ok: false, error: 'tenant_id is required' }, 400);
+  }
+  if (!subject) {
+    return c.json({ ok: false, error: 'subject is required' }, 400);
+  }
+  if (subjectType !== null && subjectType !== undefined && !ALLOWED_SUBJECT_TYPES.has(String(subjectType))) {
+    return c.json({ ok: false, error: 'invalid_subject_type' }, 400);
+  }
+  if (state !== null && state !== undefined && state !== 'null' && !ALLOWED_STATES.has(String(state))) {
+    return c.json({ ok: false, error: 'invalid_state' }, 400);
+  }
+  if (tasks.length === 0 || tasks.some((t: string) => !TASK_COSTS[t])) {
+    return c.json({ ok: false, error: 'invalid_tasks' }, 400);
+  }
+
+  const db = c.env.DB;
+  let tenant: any = null;
+  try {
+    const res = await db.prepare('SELECT id, name, credit_balance, plan, is_active FROM tenants WHERE id = ?').bind(tenantId).first();
+    tenant = res;
+  } catch {
+    const all = await db.prepare('SELECT id, name, credit_balance, plan, is_active FROM tenants').all();
+    tenant = (all?.results ?? []).find((t: any) => t.id === tenantId) || null;
+  }
+  if (!tenant || tenant.is_active !== 1 && tenant.is_active !== true) {
+    return c.json({ ok: false, error: 'tenant_not_found_or_inactive' }, 400);
+  }
+
+  const cost = tasks.reduce((sum: number, t: string) => sum + (TASK_COSTS[t] || 0), 0);
+
+  // duplicate check: recent report for same tenant+subject within 1 hour
+  let duplicate: any = null;
+  try {
+    const res = await db.prepare(
+      `SELECT * FROM reports WHERE tenant_id = ? AND subject = ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(tenantId, subject).first();
+    duplicate = res || null;
+  } catch {
+    duplicate = null;
+  }
+  if (duplicate) {
+    const created = Date.parse(duplicate.created_at);
+    const recent = Number.isFinite(created) && (Date.now() - created) < 60 * 60 * 1000;
+    if (recent) {
+      return c.json({
+        ok: true,
+        duplicate: true,
+        reportId: duplicate.id,
+        jobId: duplicate.id,
+        status: duplicate.status ?? 'completed',
+        tenant_id: tenantId,
+        credits_used: 0,
+        credits_remaining: tenant.credit_balance,
+        pdf_url: `/api/internal/reports/${duplicate.id}/download`,
+      });
+    }
+  }
+
+  // rate limit: max 5 generations per hour per tenant
+  let recentCount = 0;
+  try {
+    const res = await db.prepare(
+      `SELECT COUNT(*) AS cnt FROM reports WHERE tenant_id = ? AND created_at >= ?`
+    ).bind(tenantId, new Date(Date.now() - 60 * 60 * 1000).toISOString()).first<{ cnt: number }>();
+    recentCount = res?.cnt ?? 0;
+  } catch {
+    recentCount = 0;
+  }
+  if (recentCount >= 5) {
+    return c.json({ ok: false, error: 'rate_limited' }, 429);
+  }
+
+  if (dryRun) {
+    return c.json({
+      ok: true,
+      dry_run: true,
+      tenant_id: tenantId,
+      subject,
+      valid: true,
+      estimated_credits: cost,
+      credits_remaining: tenant.credit_balance,
+    });
+  }
+
+  const balance = await getTenantBalance(c.env.DB, tenantId);
+  if (balance < cost) {
+    return c.json({ ok: false, error: 'insufficient_credits', required: cost, currentBalance: balance }, 402);
+  }
+
+  const { reportId } = await generateExecutiveDossier(c.env, {
+    tenantId,
+    subjectName: subject,
+    propertyAddress: subjectType === 'property' ? subject : undefined,
+    jurisdiction: 'US',
+  });
+
+  const deduction = await deductCredits(c.env.DB, tenantId, cost, 'dossier_generation', reportId);
+  try {
+    await c.env.DB.prepare('UPDATE reports SET credits_used = ? WHERE id = ?').bind(cost, reportId).run();
+  } catch {
+    // ignore
+  }
+
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO internal_audit_log (id, actor, endpoint, method, result, status_code, ip, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(newId('ia'), 'staypuft', '/api/internal/reports/generate', 'POST', `dossier_generated:${tenantId}:${reportId}`, 201, c.req.header('cf-connecting-ip') || null, nowIso())
+      .run();
+  } catch {
+    // ignore
+  }
+
+  const remaining = deduction.success ? deduction.newBalance : await getTenantBalance(c.env.DB, tenantId);
+  return c.json({
+    ok: true,
+    reportId,
+    jobId: reportId,
+    status: 'completed',
+    tenant_id: tenantId,
+    credits_used: cost,
+    credits_remaining: remaining,
+    pdf_url: `/api/internal/reports/${reportId}/download`,
+  });
+});
+
+internal.get('/reports/:id/download', async (c) => {
+  const id = c.req.param('id');
+  let row: any = null;
+  try {
+    row = await c.env.DB.prepare('SELECT * FROM reports WHERE id = ? LIMIT 1').bind(id).first();
+  } catch {
+    row = null;
+  }
+  if (!row) return c.json({ ok: false, error: 'not_found' }, 404);
+  const key = row.pdf_key ?? row.pdf_url ?? row.pdfKey ?? null;
+  if (!key || !c.env.R2) return c.json({ ok: false, error: 'not_found' }, 404);
+  let obj: any = null;
+  try { obj = await c.env.R2.get(key); } catch { obj = null; }
+  if (!obj) return c.json({ ok: false, error: 'not_found' }, 404);
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/pdf');
+  headers.set('Content-Disposition', `inline; filename="Hermes-Dossier-${id}.pdf"`);
+  return new Response(obj.body, { headers });
+});
+
 export default internal;
 
