@@ -238,7 +238,7 @@ clientApi.get('/leads', async (c) => {
   const limit = clampLimit(c.req.query('limit'));
   const offset = Math.max(0, Number(c.req.query('offset') || 0));
 
-  const candidateTables = ['investor_profiles', 'leads', 'harvested_leads', 'entity_lookups'];
+  const candidateTables = ['leads', 'investor_profiles', 'harvested_leads', 'entity_lookups'];
   let rows: any[] = [];
   for (const table of candidateTables) {
     try {

@@ -168,3 +168,7 @@ export async function harvestLeads(
     leads,
   };
 }
+
+export { scoreLead, scoreHarvestedLead, calculateLeadScore, leadScore, LEAD_SCORE_THRESHOLD } from './leadScoring';
+export { runLeadHarvest, LEAD_CREDIT_COST, LEAD_HARVEST_SOURCES, LEAD_SCORE_THRESHOLD_VALUE } from './leadHarvester';
+export type { LeadRecord, ScoredHarvestedLead, LeadHarvestRunResult } from './leadHarvester';

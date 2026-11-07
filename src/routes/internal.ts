@@ -3,6 +3,7 @@ import type { Env } from '../types/env';
 import { newId, nowIso } from '../services/db';
 import { generateExecutiveDossier } from '../services/reports';
 import { getTenantBalance, hasSufficientCredits, deductCredits } from '../services/credits';
+import { runLeadHarvest } from '../services/harvester/leadHarvester';
 
 export const internal = new Hono<{ Bindings: Env }>();
 
@@ -510,6 +511,174 @@ internal.get('/reports/:id/download', async (c) => {
   headers.set('Content-Type', 'application/pdf');
   headers.set('Content-Disposition', `inline; filename="Hermes-Dossier-${id}.pdf"`);
   return new Response(obj.body, { headers });
+});
+
+// ---------- Hermes Lead Harvester v1 ----------
+function clampHarvestLimit(raw: any, fallback = 20): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(20, Math.max(1, Math.floor(n)));
+}
+
+async function getTenantRow(db: any, tenantId: string): Promise<any> {
+  try {
+    return await db.prepare('SELECT id, name, credit_balance, plan, is_active FROM tenants WHERE id = ?').bind(tenantId).first();
+  } catch {
+    const all = await db.prepare('SELECT id, name, credit_balance, plan, is_active FROM tenants').all();
+    return (all?.results ?? []).find((t: any) => t.id === tenantId) || null;
+  }
+}
+
+internal.post('/harvest/run', async (c) => {
+  let body: any = {};
+  try { body = await c.req.json(); } catch { body = {}; }
+
+  const tenantId = String(body?.tenant_id ?? body?.tenantId ?? '').trim();
+  const source = String(body?.source ?? 'sec_form_d').trim();
+  const limit = clampHarvestLimit(body?.limit, 20);
+  const dryRun = body?.dry_run === true || body?.dryRun === true;
+
+  if (!tenantId) {
+    return c.json({ ok: false, error: 'tenant_id is required' }, 400);
+  }
+
+  const db = c.env.DB;
+  const tenant = await getTenantRow(db, tenantId);
+  if (!tenant || (tenant.is_active !== 1 && tenant.is_active !== true)) {
+    return c.json({ ok: false, error: 'tenant_not_found_or_inactive' }, 400);
+  }
+
+  try {
+    const result = await runLeadHarvest(c.env, { tenantId, source, limit, dryRun });
+    return c.json({ ok: true, ...result, run_id: result.runId, id: result.runId, credits_remaining: result.creditsRemaining, creditsRemaining: result.creditsRemaining, ingested_count: result.ingestedCount, skipped_duplicate_count: result.skippedDuplicateCount, skipped_low_score_count: result.skippedLowScoreCount, total_found: result.totalFound, ingested_leads: result.ingestedLeads });
+  } catch (err: any) {
+    if (err?.code === 'insufficient_credits') {
+      return c.json({ ok: false, error: 'insufficient_credits', required: err.required, currentBalance: err.currentBalance }, 402);
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg === 'invalid_source') {
+      return c.json({ ok: false, error: 'invalid_source' }, 400);
+    }
+    return c.json({ ok: false, error: msg }, 400);
+  }
+});
+
+function normalizeHarvestRun(row: any): any {
+  let leads: any = [];
+  let ingested: any = [];
+  try {
+    const parsed = JSON.parse(row?.leads_json ?? row?.leadsJson ?? '{}');
+    leads = parsed?.leads ?? parsed?.items ?? [];
+    ingested = parsed?.ingestedLeads ?? parsed?.ingested_leads ?? [];
+  } catch {
+    leads = [];
+    ingested = [];
+  }
+  return {
+    id: row?.id,
+    tenant_id: row?.tenant_id ?? row?.tenantId ?? null,
+    source: row?.source ?? null,
+    limit: row?.limit_count ?? row?.limit ?? null,
+    dry_run: row?.dry_run === 1 || row?.dry_run === true,
+    status: row?.status ?? 'completed',
+    credits_used: row?.credits_used ?? 0,
+    leads,
+    ingested_leads: ingested,
+    ingestedLeads: ingested,
+    created_at: row?.created_at ?? row?.createdAt ?? null,
+  };
+}
+
+async function fetchHarvestRun(db: any, id: string): Promise<any> {
+  try {
+    return await db.prepare('SELECT * FROM harvest_runs WHERE id = ?').bind(id).first();
+  } catch {
+    return null;
+  }
+}
+
+internal.get('/harvest/runs/:id', async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const tenantId = c.req.query('tenant_id') || c.req.query('tenantId');
+  const row = await fetchHarvestRun(db, id);
+  if (!row) return c.json({ ok: false, error: 'not_found' }, 404);
+  if (tenantId && row.tenant_id !== tenantId) return c.json({ ok: false, error: 'not_found' }, 404);
+  const run = normalizeHarvestRun(row);
+  return c.json({ ok: true, run, leads: run.leads, ingested_leads: run.ingested_leads, ingestedLeads: run.ingestedLeads });
+});
+
+internal.get('/harvest/run/:id', async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const row = await fetchHarvestRun(db, id);
+  if (!row) return c.json({ ok: false, error: 'not_found' }, 404);
+  const run = normalizeHarvestRun(row);
+  return c.json({ ok: true, run, leads: run.leads, ingested_leads: run.ingested_leads, ingestedLeads: run.ingestedLeads });
+});
+
+internal.get('/harvest/results/:id', async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const row = await fetchHarvestRun(db, id);
+  if (!row) return c.json({ ok: false, error: 'not_found' }, 404);
+  const run = normalizeHarvestRun(row);
+  return c.json({ ok: true, run, leads: run.leads, ingested_leads: run.ingested_leads, ingestedLeads: run.ingestedLeads });
+});
+
+internal.get('/harvest-runs/:id', async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  const row = await fetchHarvestRun(db, id);
+  if (!row) return c.json({ ok: false, error: 'not_found' }, 404);
+  const run = normalizeHarvestRun(row);
+  return c.json({ ok: true, run, leads: run.leads, ingested_leads: run.ingested_leads, ingestedLeads: run.ingestedLeads });
+});
+
+internal.get('/harvest/:id', async (c) => {
+  const db = c.env.DB;
+  const id = c.req.param('id');
+  if (id === 'run' || id === 'runs' || id === 'results') {
+    return c.json({ ok: false, error: 'not_found' }, 404);
+  }
+  const row = await fetchHarvestRun(db, id);
+  if (!row) return c.json({ ok: false, error: 'not_found' }, 404);
+  const run = normalizeHarvestRun(row);
+  return c.json({ ok: true, run, leads: run.leads, ingested_leads: run.ingested_leads, ingestedLeads: run.ingestedLeads });
+});
+
+internal.get('/leads', async (c) => {
+  const db = c.env.DB;
+  const tenantId = c.req.query('tenant_id') || c.req.query('tenantId');
+  const limit = clampLimit(c.req.query('limit'));
+  let rows: any[] = [];
+  try {
+    let sql = 'SELECT * FROM leads';
+    const binds: any[] = [];
+    if (tenantId) {
+      sql += ' WHERE tenant_id = ?';
+      binds.push(tenantId);
+    }
+    sql += ' ORDER BY created_at DESC LIMIT ?';
+    binds.push(limit);
+    const stmt = db.prepare(sql);
+    const res = binds.length === 2 ? await stmt.bind(binds[0], binds[1]).all() : await stmt.bind(binds[0]).all();
+    rows = res?.results ?? [];
+  } catch {
+    rows = [];
+  }
+  const leads = rows.map((row: any) => ({
+    id: row.id,
+    tenant_id: row.tenant_id,
+    subject: row.subject,
+    source: row.source,
+    status: row.status,
+    score: row.score,
+    contact: row.contact,
+    created_at: row.created_at,
+    name: row.subject,
+  }));
+  return c.json({ ok: true, leads, items: leads, count: leads.length, total: leads.length, limit });
 });
 
 export default internal;
