@@ -296,4 +296,48 @@ internal.get('/metrics', async (c) => {
   });
 });
 
+import { hashPassword } from '../lib/password';
+
+internal.post('/users', async (c) => {
+  let body: any = {};
+  try { body = await c.req.json(); } catch { body = {}; }
+  const email = String(body?.email ?? '').trim().toLowerCase();
+  const password = String(body?.password ?? '');
+  const name = body?.name ?? null;
+  const tenantId = String(body?.tenant_id ?? body?.tenantId ?? '').trim();
+  const role = String(body?.role ?? 'client').trim() || 'client';
+  if (!email || !password || !tenantId) {
+    return c.json({ ok: false, error: 'email, password and tenant_id are required' }, 400);
+  }
+  if (password.length < 8) {
+    return c.json({ ok: false, error: 'password too short' }, 400);
+  }
+
+  const hash = await hashPassword(password);
+  const id = `usr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO client_users (id, tenant_id, email, password_hash, name, role, is_active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
+    )
+      .bind(id, tenantId, email, hash, name, role, new Date().toISOString(), new Date().toISOString())
+      .run();
+  } catch (err: any) {
+    return c.json({ ok: false, error: err?.message || 'create_failed' }, 400);
+  }
+
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO internal_audit_log (id, actor, endpoint, method, result, status_code, ip, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(`ia_${Date.now().toString(36)}`, 'staypuft', '/api/internal/users', 'POST', 'user_created', 201, c.req.header('cf-connecting-ip') || null, new Date().toISOString())
+      .run();
+  } catch {
+    // ignore
+  }
+
+  return c.json({ ok: true, user: { id, email, name, role, tenant_id: tenantId } }, 201);
+});
 export default internal;
+

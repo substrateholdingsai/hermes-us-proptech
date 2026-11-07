@@ -3,6 +3,7 @@ import type { Env } from './types/env';
 import { intelligence } from './routes/intelligence';
 import { dashboard, serveVektorAsset } from './routes/dashboard';
 import { internal } from './routes/internal';
+import { clientApi, clientPages } from './routes/client';
 import { landingView } from './views/landing';
 import { docsRouter } from './routes/docs';
 import { openApiSpec } from './docs/openapi';
@@ -31,6 +32,8 @@ app.get('/api/v1/openapi.json', (c) => c.json(openApiSpec));
 app.get('/', (c) => c.html(landingView()));
 app.route('/dashboard', dashboard);
 app.route('/api/internal', internal);
+app.route('/api/client', clientApi);
+app.route('/client', clientPages);
 
 app.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-proptech' }));
 
@@ -41,3 +44,4 @@ export { app };
   ctx.waitUntil(runScheduledHarvester(env));
 };
 export default app;
+

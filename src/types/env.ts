@@ -11,6 +11,9 @@ export interface Env {
   HERMES_SANDBOX?: DurableObjectNamespace;
   HERMES_STAYPUFT_API_KEY?: string;
   STAYPUFT_API_KEY?: string;
+  HERMES_JWT_SECRET?: string;
+  CRM_JWT_SECRET?: string;
+  JWT_SECRET?: string;
   RENTCAST_API_KEY?: string;
   ATTOM_API_KEY?: string;
   TWILIO_ACCOUNT_SID?: string;
