@@ -33,7 +33,8 @@ export function landingView(): string {
         <a href="#pricing" class="hover:text-vektor-pri">Pricing</a>
         <a href="/docs" class="hover:text-vektor-pri">API Docs</a>
       </nav>
-      <a href="/dashboard" class="px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-semibold text-sm hover:bg-vektor-cyan-hi">Open Console</a>
+      <a href="/dashboard" class="px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-semibold text-sm hover:bg-vektor-cyan-hi">Super Admin</a>
+      <button id="clientAccessBtn" class="px-4 py-2 rounded border border-vektor-hi text-vektor-pri text-sm hover:border-vektor-cyan">Acceso Clientes</button>
     </div>
   </header>
 
@@ -202,6 +203,51 @@ export function landingView(): string {
       © 2026 Hermes US PropTech. All rights reserved. Data provided for informational purposes only and does not constitute legal, tax, or investment advice. TCPA compliance, consent management, and permissible use of consumer data are the responsibility of the customer. Credit costs and pricing subject to change.
     </div>
   </footer>
+
+  <div id="clientModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-vektor-surface border border-vektor-hi rounded-lg p-6 w-full max-w-md shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-display font-bold text-base text-vektor-pri">Acceso Clientes</h3>
+        <button id="clientModalClose" class="text-vektor-sec hover:text-vektor-pri text-lg leading-none">&times;</button>
+      </div>
+      <form id="clientModalForm" class="space-y-4">
+        <div>
+          <label for="clientEmail" class="block text-xs font-mono text-vektor-sec uppercase tracking-wider mb-1.5">Email</label>
+          <input id="clientEmail" type="email" required class="w-full bg-vektor-canvas border border-vektor-line focus:border-vektor-cyan rounded px-3 py-2.5 text-sm text-vektor-pri outline-none transition" />
+        </div>
+        <div>
+          <label for="clientPassword" class="block text-xs font-mono text-vektor-sec uppercase tracking-wider mb-1.5">Password</label>
+          <input id="clientPassword" type="password" required class="w-full bg-vektor-canvas border border-vektor-line focus:border-vektor-cyan rounded px-3 py-2.5 text-sm text-vektor-pri outline-none transition" />
+        </div>
+        <button type="submit" class="w-full bg-vektor-cyan hover:bg-vektor-cyan-hi text-vektor-void font-display font-bold text-sm tracking-wide rounded py-2.5 transition">Login</button>
+        <div id="clientModalMsg" class="text-sm text-vektor-red font-mono min-h-[1.25rem]" role="alert"></div>
+      </form>
+    </div>
+  </div>
+  <script>
+  (function(){
+    var btn=document.getElementById('clientAccessBtn');
+    var modal=document.getElementById('clientModal');
+    var close=document.getElementById('clientModalClose');
+    function open(){ if(modal) modal.classList.remove('hidden'); }
+    function shut(){ if(modal) modal.classList.add('hidden'); }
+    if(btn) btn.addEventListener('click', open);
+    if(close) close.addEventListener('click', shut);
+    if(modal) modal.addEventListener('click', function(e){ if(e.target===modal) shut(); });
+    var form=document.getElementById('clientModalForm');
+    if(form) form.addEventListener('submit', async function(e){
+      e.preventDefault();
+      var msg=document.getElementById('clientModalMsg');
+      if(msg) msg.textContent='';
+      try {
+        var res=await fetch('/api/client/login', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({ email: document.getElementById('clientEmail').value, password: document.getElementById('clientPassword').value }) });
+        if(res.ok){ window.location.href='/client'; }
+        else { if(msg) msg.textContent='Credenciales inválidas'; }
+      } catch(err){ if(msg) msg.textContent='Credenciales inválidas'; }
+    });
+  })();
+  </script>
+
 </body>
 </html>`;
 }
