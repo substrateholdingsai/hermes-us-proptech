@@ -17,30 +17,29 @@ describe('mexico harvester', () => {
     expect(normalizeMexicoPhone('5215512345678')).toBe('5512345678');
   });
 
-  it('scrubs REPEP', () => {
+  it('scrubs REPEP as unknown without authorized query', () => {
     const res = scrubRepep('55 1234 5678');
     expect(res.normalizedPhone).toBe('5512345678');
-    expect(res.repepStatus).toBe('clean');
-    expect(res.carrierIft).toBe('Telcel');
-    expect(res.isMobile).toBe(true);
+    expect(res.repepStatus).toBe('unknown');
+    expect(res.reusStatus).toBe('unknown');
+    expect(res.isTcpaSafe).toBe(false);
   });
 
-  it('harvests SIGER SAPI leads', async () => {
+  it('disables SIGER (no fixed data)', async () => {
     const batch = await harvestLeads(ctx, { source: 'siger_sapi', limit: 3, autoEnrich: false, entidadFederativa: 'CDMX' });
-    expect(batch.leads.length).toBeGreaterThan(0);
-    expect(batch.leads.every((l) => l.source === 'siger_sapi')).toBe(true);
-    expect(batch.leads[0].mexicoMetadata?.folioMercantil).toBeTruthy();
+    expect(batch.leads.length).toBe(0);
+    expect(batch.creditsConsumed).toBe(0);
   });
 
-  it('harvests RPPyC luxury leads', async () => {
+  it('disables RPPyC (no fixed data)', async () => {
     const batch = await harvestLeads(ctx, { source: 'rppyc_luxury_acquisitions', limit: 2, autoEnrich: false, minAmountMxn: 30000000 });
-    expect(batch.leads.length).toBe(2);
-    expect(batch.leads.every((l) => l.source === 'rppyc_luxury_acquisitions')).toBe(true);
+    expect(batch.leads.length).toBe(0);
+    expect(batch.creditsConsumed).toBe(0);
   });
 
-  it('harvests CNBV qualified investors', async () => {
+  it('disables CNBV (no fixed data)', async () => {
     const batch = await harvestLeads(ctx, { source: 'cnbv_qualified_investors', limit: 2, autoEnrich: false });
-    expect(batch.leads.length).toBe(2);
-    expect(batch.leads[0].accreditationBadge).toBe('Qualified Purchaser');
+    expect(batch.leads.length).toBe(0);
+    expect(batch.creditsConsumed).toBe(0);
   });
 });

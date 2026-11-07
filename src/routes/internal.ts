@@ -319,9 +319,10 @@ internal.post('/users', async (c) => {
 
   const hash = await hashPassword(password);
   const id = `usr_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const table = role === 'super_admin' ? 'super_admins' : 'client_users';
   try {
     await c.env.DB.prepare(
-      `INSERT INTO client_users (id, tenant_id, email, password_hash, name, role, is_active, created_at, updated_at)
+      `INSERT INTO ${table} (id, tenant_id, email, password_hash, name, role, is_active, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
     )
       .bind(id, tenantId, email, hash, name, role, new Date().toISOString(), new Date().toISOString())

@@ -17,7 +17,7 @@ export interface MexicoLeadMetadata {
   notariaNumero?: number;
   notarioTitular?: string;
   regimenFiscal?: string;
-  repepStatus: 'clean' | 'flagged';
-  reusStatus: 'clean' | 'flagged';
+  repepStatus: 'clean' | 'flagged' | 'unknown';
+  reusStatus: 'clean' | 'flagged' | 'unknown';
   carrierIft?: 'Telcel' | 'AT&T Mexico' | 'Movistar' | 'Altan Redes' | 'Fijo';
 }

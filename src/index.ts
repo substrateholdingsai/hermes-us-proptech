@@ -4,6 +4,7 @@ import { intelligence } from './routes/intelligence';
 import { dashboard, serveVektorAsset } from './routes/dashboard';
 import { internal } from './routes/internal';
 import { clientApi, clientPages } from './routes/client';
+import { superadminApi, superadminPages } from './routes/superadmin';
 import { landingView } from './views/landing';
 import { docsRouter } from './routes/docs';
 import { openApiSpec } from './docs/openapi';
@@ -33,7 +34,9 @@ app.get('/', (c) => c.html(landingView()));
 app.route('/dashboard', dashboard);
 app.route('/api/internal', internal);
 app.route('/api/client', clientApi);
+app.route('/api/superadmin', superadminApi);
 app.route('/client', clientPages);
+app.route('/superadmin', superadminPages);
 
 app.get('/health', (c) => c.json({ ok: true, service: 'hermes-us-proptech' }));
 

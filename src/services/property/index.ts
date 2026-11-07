@@ -104,5 +104,22 @@ export async function resolvePropertyEquity(
     }
   }
 
-  return aiEstimate(ctx.env, address, state);
+  return {
+    address,
+    county: 'Sin datos',
+    state,
+    parcelId: '',
+    assessedValueCents: 0,
+    marketValueCents: 0,
+    mortgageBalanceCents: 0,
+    equityCents: 0,
+    equityPercent: 0,
+    taxAmountCents: 0,
+    isTaxDelinquent: false,
+    lastSaleDate: null,
+    lastSalePriceCents: null,
+    ownerName: 'Sin datos',
+    ownerType: 'unknown',
+    dataSource: 'none',
+  };
 }

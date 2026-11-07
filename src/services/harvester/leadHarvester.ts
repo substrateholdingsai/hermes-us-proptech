@@ -44,6 +44,7 @@ export interface LeadHarvestRunResult {
   leads: ScoredHarvestedLead[];
   ingestedLeads: LeadRecord[];
   createdAt: string;
+  error?: string | null;
 }
 
 function isLeadHarvestSource(source: string): source is LeadHarvestSource {
@@ -99,11 +100,19 @@ export async function runLeadHarvest(
 
   const ctx: TenantContext = { tenantId, env };
   let harvested: HarvestedLeadItem[] = [];
-  if (source === 'sec_form_d') {
-    harvested = await harvestSecFormD(ctx, { source, limit, autoEnrich: true });
-  } else {
-    harvested = await harvestSigerSapi(ctx, { source, limit, autoEnrich: true });
+  let sourceError: string | null = null;
+  try {
+    if (source === 'sec_form_d') {
+      harvested = await harvestSecFormD(ctx, { source, limit, autoEnrich: true });
+    } else {
+      harvested = await harvestSigerSapi(ctx, { source, limit, autoEnrich: true });
+    }
+  } catch (err) {
+    sourceError = String(err);
+    harvested = [];
   }
+  const arrAny: any = harvested;
+  if (arrAny && arrAny.error) sourceError = arrAny.error;
 
   const scored: ScoredHarvestedLead[] = harvested.map((lead) => ({
     ...lead,
@@ -157,7 +166,7 @@ export async function runLeadHarvest(
       source,
       limit,
       dry_run: true,
-      status: 'dry_run',
+      status: sourceError ? 'error' : 'dry_run',
       totalFound: harvested.length,
       ingestedCount: 0,
       skippedDuplicateCount,
@@ -167,12 +176,13 @@ export async function runLeadHarvest(
       leads: scored,
       ingestedLeads: [],
       createdAt,
+      error: sourceError,
     };
   }
 
   const ingestedLeads: LeadRecord[] = [];
   for (const lead of newQualifying) {
-    const subject = lead.entityOrFundName || lead.primaryContactName;
+    const subject = lead.entityOrFundName || lead.primaryContactName || '';
     const contact = lead.email || lead.phone || null;
     const id = newId('lead');
     try {
@@ -193,7 +203,8 @@ export async function runLeadHarvest(
         created_at: createdAt,
       });
     } catch {
-      // duplicate or persistence error: skip
+      // duplicate or persistence error: count as skipped duplicate
+      skippedDuplicateCount += 1;
     }
   }
 
@@ -227,13 +238,18 @@ export async function runLeadHarvest(
     // ignore
   }
 
+  let finalStatus = 'completed';
+  if (arrAny && arrAny.disabled) finalStatus = 'disabled';
+  else if (sourceError) finalStatus = 'error';
+  else if (harvested.length === 0) finalStatus = 'empty';
+
   return {
     runId,
     tenant_id: tenantId,
     source,
     limit,
     dry_run: false,
-    status: 'completed',
+    status: finalStatus,
     totalFound: harvested.length,
     ingestedCount: actuallyIngested,
     skippedDuplicateCount,
@@ -243,5 +259,6 @@ export async function runLeadHarvest(
     leads: scored,
     ingestedLeads,
     createdAt,
+    error: sourceError,
   };
 }

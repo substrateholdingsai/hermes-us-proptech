@@ -8,6 +8,8 @@ export type HarvestSource =
   | 'rppyc_luxury_acquisitions'
   | 'cnbv_qualified_investors';
 
+export type VerificationStatus = 'verified' | 'unverified' | 'estimated' | 'demo';
+
 export interface HarvestParams {
   source: HarvestSource;
   limit?: number;
@@ -23,19 +25,26 @@ export interface HarvestedLeadItem {
   id: string;
   source: HarvestSource;
   entityOrFundName: string;
-  primaryContactName: string;
-  contactRole: string;
+  primaryContactName: string | null;
+  contactRole: string | null;
   jurisdiction: string;
-  capitalOrDealSizeDollars: number;
+  propertyAddress?: string | null;
+  capitalOrDealSizeDollars: number | null;
   dealSizeFormatted: string;
   accreditationBadge: 'Accredited (Rule 501)' | 'Qualified Purchaser' | 'Verified HNWI';
   phone: string;
   lineType: string;
-  dncStatus: 'clean' | 'flagged';
+  dncStatus: 'clean' | 'flagged' | 'unknown';
   email: string;
   isTcpaSafe: boolean;
   harvestedAt: string;
   mexicoMetadata?: MexicoLeadMetadata;
+  verificationStatus: VerificationStatus;
+  dataSource: string;
+  sourceUrl: string | null;
+  sourceId: string | null;
+  verifiedAt: string | null;
+  queriedAt: string | null;
 }
 
 export interface HarvestBatchResult {
@@ -45,4 +54,6 @@ export interface HarvestBatchResult {
   enrichedCount: number;
   creditsConsumed: number;
   leads: HarvestedLeadItem[];
+  status?: 'completed' | 'empty' | 'error' | 'disabled';
+  error?: string | null;
 }

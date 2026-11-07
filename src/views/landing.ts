@@ -33,7 +33,7 @@ export function landingView(): string {
         <a href="#pricing" class="hover:text-vektor-pri">Pricing</a>
         <a href="/docs" class="hover:text-vektor-pri">API Docs</a>
       </nav>
-      <a href="/dashboard" class="px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-semibold text-sm hover:bg-vektor-cyan-hi">Super Admin</a>
+      <a href="/superadmin/login" class="px-4 py-2 rounded bg-vektor-cyan text-vektor-void font-semibold text-sm hover:bg-vektor-cyan-hi">Super Admin</a>
       <button id="clientAccessBtn" class="px-4 py-2 rounded border border-vektor-hi text-vektor-pri text-sm hover:border-vektor-cyan">Acceso Clientes</button>
     </div>
   </header>

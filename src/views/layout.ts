@@ -94,71 +94,18 @@ body{font-family:Inter,sans-serif;background:#0A0E14;color:#E6EDF3;}
 </main>
 </div>
 
-<!-- Modal API Key -->
-<div id="keyModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-  <div class="bg-vektor-surface border border-vektor-hi rounded-lg p-6 w-full max-w-md shadow-2xl">
-    <div class="flex items-center justify-between mb-2">
-      <h3 class="font-display font-bold text-base text-vektor-pri">API Authentication Key</h3>
-      <span class="text-[10px] font-mono uppercase bg-vektor-cyan/15 text-vektor-cyan px-2 py-0.5 rounded border border-vektor-cyan/30">BEARER</span>
-    </div>
-    <p class="text-xs text-vektor-sec mb-4">Requests to <code class="text-vektor-cyan font-mono">/api/v1/intelligence/*</code> are authenticated with this token. Stored locally in your browser.</p>
-    <div class="space-y-3">
-      <label class="text-[11px] font-mono text-vektor-mut uppercase">Current Key</label>
-      <input id="apiKeyInput" type="text" class="w-full bg-vektor-canvas border border-vektor-line focus:border-vektor-cyan rounded px-3 py-2 text-xs font-mono text-vektor-pri outline-none" />
-      <div class="text-[11px] text-vektor-mut flex justify-between">
-        <span>Default local dev key:</span>
-        <button onclick="document.getElementById('apiKeyInput').value='hermes_dev_secret_key_2026'" class="text-vektor-cyan hover:underline font-mono">Use dev default</button>
-      </div>
-    </div>
-    <div class="flex gap-2 mt-5 justify-end">
-      <button onclick="closeKeyModal()" class="px-4 py-1.5 text-xs text-vektor-sec hover:text-vektor-pri">Cancel</button>
-      <button onclick="saveKey()" class="px-4 py-1.5 text-xs bg-vektor-cyan text-vektor-void font-bold rounded hover:bg-vektor-cyan-hi transition">Save & Apply</button>
-    </div>
-  </div>
-</div>
-
 <script>
-const KEY_STORAGE = 'hermes_api_key';
-function getApiKey() {
-  const k = localStorage.getItem(KEY_STORAGE);
-  return k && k.trim() ? k.trim() : 'hermes_dev_secret_key_2026';
-}
-function updateKeyBadge() {
-  const k = getApiKey();
-  const el = document.getElementById('keyPrefixBadge');
-  if (el) el.textContent = k.slice(0, 8) + '...';
-}
-function openKeyModal() {
-  document.getElementById('keyModal').classList.remove('hidden');
-  document.getElementById('apiKeyInput').value = getApiKey();
-}
-function closeKeyModal() {
-  document.getElementById('keyModal').classList.add('hidden');
-}
-function saveKey() {
-  const v = document.getElementById('apiKeyInput').value.trim();
-  if (v) {
-    localStorage.setItem(KEY_STORAGE, v);
-  } else {
-    localStorage.removeItem(KEY_STORAGE);
-  }
-  updateKeyBadge();
-  closeKeyModal();
-  window.location.reload();
-}
 async function api(path, opts = {}) {
-  const token = getApiKey();
   const res = await fetch(path, {
+    credentials: 'include',
     ...opts,
     headers: {
-      'Authorization': 'Bearer ' + token,
       'Content-Type': 'application/json',
       ...(opts.headers || {})
     }
   });
   return res;
 }
-updateKeyBadge();
 </script>
 </body></html>`;
 }

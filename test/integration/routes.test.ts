@@ -41,22 +41,20 @@ describe('routes', () => {
     expect(html).toContain('VEKTOR');
   });
 
-  it('GET /dashboard -> 200 contains VEKTOR and SYSTEM OPERATIONAL', async () => {
+  it('GET /dashboard -> 302 redirect to superadmin login', async () => {
     const res = await app.request('/dashboard');
-    expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html).toContain('VEKTOR');
-    expect(html).toContain('SYSTEM OPERATIONAL');
+    expect([301,302,303,307,308]).toContain(res.status);
+    expect(res.headers.get('location')).toContain('/superadmin/login');
   });
 
-  it('GET /dashboard/launchpad -> 200', async () => {
+  it('GET /dashboard/launchpad -> 302 redirect', async () => {
     const res = await app.request('/dashboard/launchpad');
-    expect(res.status).toBe(200);
+    expect([301,302,303,307,308]).toContain(res.status);
   });
 
-  it('GET /dashboard/explorer -> 200', async () => {
+  it('GET /dashboard/explorer -> 302 redirect', async () => {
     const res = await app.request('/dashboard/explorer');
-    expect(res.status).toBe(200);
+    expect([301,302,303,307,308]).toContain(res.status);
   });
 
   it('POST entity-resolution without auth -> 401', async () => {

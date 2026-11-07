@@ -6,8 +6,19 @@ import { explorerView } from '../views/explorer';
 import { dossierModalView } from '../views/dossierModal';
 import { harvesterView } from '../views/harvester';
 import { VEKTOR_ASSETS } from '../lib/vektorAssets';
+import { getSessionSuperAdmin } from './superadmin';
 
 export const dashboard = new Hono<{ Bindings: Env }>();
+
+dashboard.use('*', async (c, next) => {
+  const p = c.req.path || '';
+  if (p.includes('/assets/vektor/')) return next();
+  const session = await getSessionSuperAdmin(c);
+  if (!session || session.role !== 'super_admin') {
+    return c.redirect('/superadmin/login');
+  }
+  await next();
+});
 
 export function serveVektorAsset(file: string) {
   const content = VEKTOR_ASSETS[file];

@@ -15,5 +15,5 @@ export interface PropertyRecordResult {
   lastSalePriceCents: number | null;
   ownerName: string;
   ownerType: 'individual' | 'entity' | 'trust' | 'unknown';
-  dataSource: 'aggregator' | 'county_assessor' | 'sandbox_forensics' | 'ai_estimated';
+  dataSource: 'aggregator' | 'county_assessor' | 'sandbox_forensics' | 'ai_estimated' | 'none';
 }

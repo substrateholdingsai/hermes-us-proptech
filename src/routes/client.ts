@@ -10,7 +10,8 @@ export const clientPages = new Hono<{ Bindings: Env }>();
 
 const CLIENT_USER_TABLES = ['client_users', 'users', 'tenant_users', 'crm_users'];
 
-function getJwtSecret(env: Env): string | null {
+function getJwtSecret(env: any): string | null {
+  if (!env) return null;
   const s = env.HERMES_JWT_SECRET || env.CRM_JWT_SECRET || env.JWT_SECRET;
   if (s && s.trim()) return s.trim();
   if ((env.ENVIRONMENT || 'development') === 'production') return null;
@@ -246,7 +247,7 @@ clientApi.get('/leads', async (c) => {
   let rows: any[] = [];
   for (const table of candidateTables) {
     try {
-      const sql = `SELECT * FROM ${table} WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+      const sql = `SELECT * FROM ${table} WHERE tenant_id = ? AND (quarantined IS NULL OR quarantined = 0) ORDER BY created_at DESC LIMIT ? OFFSET ?`;
       const res = await c.env.DB.prepare(sql).bind(tenantId, limit, offset).all();
       const r = res?.results ?? [];
       if (r.length > 0) { rows = r; break; }
@@ -288,7 +289,7 @@ clientApi.get('/reports', async (c) => {
   let rows: any[] = [];
   try {
     const res = await c.env.DB
-      .prepare('SELECT * FROM reports WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ?')
+      .prepare('SELECT * FROM reports WHERE tenant_id = ? AND (quarantined IS NULL OR quarantined = 0) ORDER BY created_at DESC LIMIT ?')
       .bind(tenantId, limit)
       .all();
     rows = res?.results ?? [];
@@ -321,7 +322,7 @@ clientApi.get('/reports/:id/download', async (c) => {
   } catch {
     row = null;
   }
-  if (!row || row.tenant_id !== tenantId) {
+  if (!row || row.tenant_id !== tenantId || row.quarantined === 1 || row.quarantined === true) {
     return c.json({ ok: false, error: 'forbidden' }, 403);
   }
   const key = row.pdf_key ?? row.pdf_url ?? `reports/${tenantId}/${id}.pdf`;

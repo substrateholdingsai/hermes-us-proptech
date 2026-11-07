@@ -12,23 +12,22 @@ describe('harvester', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 500 })));
   });
 
-  it('harvests SEC Form D leads', async () => {
+  it('does not generate leads when SEC fetch fails', async () => {
     const batch = await harvestLeads(ctx, { source: 'sec_form_d', limit: 5, autoEnrich: false });
-    expect(batch.leads.length).toBe(5);
-    expect(batch.source).toBe('sec_form_d');
-    expect(batch.creditsConsumed).toBe(50);
-    expect(batch.leads[0].dealSizeFormatted).toMatch(/^\$/);
+    expect(batch.leads.length).toBe(0);
+    expect(batch.creditsConsumed).toBe(0);
+    expect(batch.status).toBe('error');
   });
 
-  it('harvests luxury cash buyers', async () => {
+  it('disables luxury cash buyers (no fixed data)', async () => {
     const batch = await harvestLeads(ctx, { source: 'luxury_cash_buyers', limit: 3, autoEnrich: false, minAmountDollars: 2000000 });
-    expect(batch.leads.length).toBe(3);
-    expect(batch.leads.every((l) => l.source === 'luxury_cash_buyers')).toBe(true);
+    expect(batch.leads.length).toBe(0);
+    expect(batch.creditsConsumed).toBe(0);
   });
 
-  it('harvests RIA family offices', async () => {
+  it('disables RIA family offices (no fixed data)', async () => {
     const batch = await harvestLeads(ctx, { source: 'ria_family_offices', limit: 4, autoEnrich: false });
-    expect(batch.leads.length).toBe(4);
-    expect(batch.leads[0].accreditationBadge).toBe('Qualified Purchaser');
+    expect(batch.leads.length).toBe(0);
+    expect(batch.creditsConsumed).toBe(0);
   });
 });
