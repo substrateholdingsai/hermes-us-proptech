@@ -46,6 +46,9 @@ async function findUserById(db: any, id: string): Promise<any | null> {
   return null;
 }
 
+const LOCKOUT_THRESHOLD = 5;
+const LOCKOUT_MS = 15 * 60 * 1000;
+
 function mapUser(row: any) {
   return {
     id: row.id,
@@ -55,7 +58,22 @@ function mapUser(row: any) {
     role: row.role ?? 'client',
     password_hash: row.password_hash ?? row.passwordHash ?? row.password ?? null,
     is_active: row.is_active ?? row.isActive ?? 1,
+    failed_attempts: Number(row.failed_attempts ?? row.failedAttempts ?? 0),
+    locked_until: row.locked_until ?? row.lockedUntil ?? null,
   };
+}
+
+async function recordClientAudit(c: any, email: string, result: string): Promise<void> {
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO internal_audit_log (id, actor, endpoint, method, result, status_code, ip, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(newId('ia'), 'client', '/api/client/login', 'POST', `${result}:${email}`, 401, c.req.header('cf-connecting-ip') || null, nowIso())
+      .run();
+  } catch {
+    // ignore
+  }
 }
 
 async function getSession(c: any): Promise<any | null> {
@@ -92,14 +110,66 @@ clientApi.post('/login', async (c) => {
 
   const found = await findUserByEmail(c.env.DB, email);
   if (!found) {
+    await recordClientAudit(c, email, 'login_failed');
     return c.json({ ok: false, error: 'invalid_credentials' }, 401);
   }
   const user = mapUser(found.row);
   if (!user.is_active) {
+    await recordClientAudit(c, email, 'login_failed');
     return c.json({ ok: false, error: 'invalid_credentials' }, 401);
   }
-  if (!user.password_hash || !(await verifyPassword(password, user.password_hash))) {
+
+  const now = Date.now();
+  let lockedUntilMs = user.locked_until ? Date.parse(user.locked_until) : NaN;
+  if (Number.isFinite(lockedUntilMs) && lockedUntilMs > now) {
+    await recordClientAudit(c, email, 'login_locked');
     return c.json({ ok: false, error: 'invalid_credentials' }, 401);
+  }
+  // expired lock: reset counter
+  if (Number.isFinite(lockedUntilMs) && lockedUntilMs <= now) {
+    try {
+      await c.env.DB.prepare(`UPDATE ${found.table} SET failed_attempts = 0, locked_until = NULL, updated_at = ? WHERE id = ?`)
+        .bind(nowIso(), user.id)
+        .run();
+    } catch {
+      // ignore
+    }
+    user.failed_attempts = 0;
+    user.locked_until = null;
+  }
+
+  if (!user.password_hash || !(await verifyPassword(password, user.password_hash))) {
+    const attempts = (user.failed_attempts || 0) + 1;
+    if (attempts >= LOCKOUT_THRESHOLD) {
+      const lockUntil = new Date(now + LOCKOUT_MS).toISOString();
+      try {
+        await c.env.DB.prepare(`UPDATE ${found.table} SET failed_attempts = ?, locked_until = ?, updated_at = ? WHERE id = ?`)
+          .bind(LOCKOUT_THRESHOLD, lockUntil, nowIso(), user.id)
+          .run();
+      } catch {
+        // ignore
+      }
+      await recordClientAudit(c, email, 'login_locked');
+    } else {
+      try {
+        await c.env.DB.prepare(`UPDATE ${found.table} SET failed_attempts = ?, updated_at = ? WHERE id = ?`)
+          .bind(attempts, nowIso(), user.id)
+          .run();
+      } catch {
+        // ignore
+      }
+      await recordClientAudit(c, email, 'login_failed');
+    }
+    return c.json({ ok: false, error: 'invalid_credentials' }, 401);
+  }
+
+  // success: reset
+  try {
+    await c.env.DB.prepare(`UPDATE ${found.table} SET failed_attempts = 0, locked_until = NULL, updated_at = ? WHERE id = ?`)
+      .bind(nowIso(), user.id)
+      .run();
+  } catch {
+    // ignore
   }
 
   const secret = getJwtSecret(c.env);

@@ -80,7 +80,29 @@ function createMockDb(opts: any) {
             _args: a,
             async first() { return firstFor(sql, a); },
             async all() { return allFor(sql, a); },
-            async run() { return { success: true }; },
+    async run() {
+      const args = a;
+      const s = sql.toLowerCase();
+      if (s.includes('update') && s.includes('client_users')) {
+        const id = args[args.length - 1];
+        const u = clientUsers.find((x: any) => x.id === id);
+        if (u) {
+          if (s.includes('failed_attempts = ?') && s.includes('locked_until = ?')) {
+            u.failed_attempts = args[0];
+            u.locked_until = args[1];
+          } else if (s.includes('failed_attempts = ?')) {
+            u.failed_attempts = args[0];
+          }
+          if (s.includes('failed_attempts = 0')) {
+            u.failed_attempts = 0;
+          }
+          if (s.includes('locked_until = null')) {
+            u.locked_until = null;
+          }
+        }
+      }
+      return { success: true };
+    },
           };
           return b;
         },
@@ -207,5 +229,63 @@ describe('client auth', () => {
     const res = await app.request('/api/client/reports?limit=200', { headers: { Authorization: `Bearer ${token}` } }, env2);
     const json: any = await res.json();
     expect(json.reports.length).toBe(100);
+  });
+  it('lockout: 4 failures still allow 5th attempt, 5th locks', async () => {
+    user.failed_attempts = 0;
+    user.locked_until = null;
+    for (let i = 0; i < 4; i++) {
+      const res = await app.request('/api/client/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'futura@test.com', password: 'wrong' }),
+      }, env);
+      expect(res.status).toBe(401);
+    }
+    expect(user.failed_attempts).toBe(4);
+    const fifth = await app.request('/api/client/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'futura@test.com', password: 'wrong' }),
+    }, env);
+    expect(fifth.status).toBe(401);
+    expect(user.failed_attempts).toBe(5);
+    expect(user.locked_until).toBeTruthy();
+  });
+
+  it('lockout: during lock even correct password is rejected', async () => {
+    user.failed_attempts = 5;
+    user.locked_until = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const res = await app.request('/api/client/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'futura@test.com', password: 'password123' }),
+    }, env);
+    expect(res.status).toBe(401);
+  });
+
+  it('lockout: after expiry login succeeds and resets counter', async () => {
+    user.failed_attempts = 5;
+    user.locked_until = new Date(Date.now() - 1000).toISOString();
+    const res = await app.request('/api/client/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'futura@test.com', password: 'password123' }),
+    }, env);
+    expect(res.status).toBe(200);
+    expect(user.failed_attempts).toBe(0);
+    expect(user.locked_until).toBeNull();
+  });
+
+  it('lockout: successful login resets counter', async () => {
+    user.failed_attempts = 3;
+    user.locked_until = null;
+    const res = await app.request('/api/client/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'futura@test.com', password: 'password123' }),
+    }, env);
+    expect(res.status).toBe(200);
+    expect(user.failed_attempts).toBe(0);
+    expect(user.locked_until).toBeNull();
   });
 });
