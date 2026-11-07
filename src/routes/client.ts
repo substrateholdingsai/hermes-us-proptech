@@ -3,6 +3,7 @@ import type { Env } from '../types/env';
 import { hashPassword, verifyPassword } from '../lib/password';
 import { signJwt, verifyJwt } from '../lib/jwt';
 import { newId, nowIso } from '../services/db';
+import { clientLoginView, clientPanelView } from '../views/client';
 
 export const clientApi = new Hono<{ Bindings: Env }>();
 export const clientPages = new Hono<{ Bindings: Env }>();
@@ -214,9 +215,11 @@ clientApi.get('/me', async (c) => {
   const user = await findUserById(c.env.DB, session.sub);
   const mapped = user ? mapUser(user) : null;
   let credits = 0;
+  let tenantName: string | null = null;
   try {
-    const row = await c.env.DB.prepare('SELECT credit_balance FROM tenants WHERE id = ?').bind(session.tenant_id).first<{ credit_balance: number }>();
+    const row = await c.env.DB.prepare('SELECT name, credit_balance FROM tenants WHERE id = ?').bind(session.tenant_id).first<{ name?: string; credit_balance: number }>();
     credits = row?.credit_balance ?? 0;
+    tenantName = row?.name ?? null;
   } catch {
     credits = 0;
   }
@@ -224,6 +227,7 @@ clientApi.get('/me', async (c) => {
     ok: true,
     user: mapped ? { id: mapped.id, email: mapped.email, name: mapped.name, role: mapped.role, tenant_id: mapped.tenant_id } : { id: session.sub, email: session.email, role: session.role, tenant_id: session.tenant_id },
     tenant_id: session.tenant_id,
+    tenant_name: tenantName,
     credits,
     credit_balance: credits,
     credits_remaining: credits,
@@ -256,10 +260,19 @@ clientApi.get('/leads', async (c) => {
   // if all empty, try first table anyway for schema (already empty)
   const leads = rows.map((row: any) => ({
     id: row.id,
+    subject: row.subject ?? row.full_name ?? row.name ?? row.primary_contact_name ?? row.subject_name ?? row.entity_name ?? null,
     name: row.full_name ?? row.name ?? row.primary_contact_name ?? row.subject_name ?? row.entity_name ?? null,
     company: row.entity_name ?? row.company ?? row.entityOrFundName ?? null,
+    source: row.source ?? (row.sec_form_d ? 'sec_form_d' : null),
+    sec_form_d: row.sec_form_d ?? null,
     type: row.type ?? row.lead_type ?? row.source ?? (row.sec_form_d ? 'SEC Form D' : (row.investor_type ?? 'lead')),
     status: row.status ?? 'new',
+    score: row.score ?? row.equity_score ?? 0,
+    contact: row.contact ?? row.email ?? row.phone ?? null,
+    email: row.email ?? null,
+    phone: row.phone ?? null,
+    cik: row.cik ?? row.cik_number ?? null,
+    capital: row.capital ?? row.amount ?? row.equity ?? null,
     created_at: row.created_at ?? row.createdAt ?? row.created ?? null,
     tenant_id: row.tenant_id,
   }));
@@ -345,23 +358,7 @@ clientApi.get('/reports/:id/download', async (c) => {
 
 // ---------- pages ----------
 clientPages.get('/login', (c) => {
-  return c.html(`<!doctype html><html><head><title>Futura Capital Login</title></head><body>
-  <h1>Futura Capital</h1>
-  <form id="f">
-    <input id="email" type="email" placeholder="email" />
-    <input id="password" type="password" placeholder="password" />
-    <button type="submit">Login</button>
-  </form>
-  <div id="msg"></div>
-  <script>
-  document.getElementById('f').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/client/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value }) });
-    const data = await res.json();
-    if (res.ok) { window.location.href = '/client'; } else { document.getElementById('msg').textContent = data.error || 'login failed'; }
-  });
-  </script>
-  </body></html>`);
+  return c.html(clientLoginView());
 });
 
 clientPages.get('/', async (c) => {
@@ -369,32 +366,7 @@ clientPages.get('/', async (c) => {
   if (!session) {
     return c.redirect('/client/login');
   }
-  return c.html(`<!doctype html><html><head><title>Futura Capital Panel</title></head><body>
-  <h1>Panel Futura Capital</h1>
-  <div id="credits"></div>
-  <h2>Leads</h2><div id="leads"></div>
-  <h2>Dossiers</h2><div id="reports"></div>
-  <button onclick="fetch('/api/client/logout',{method:'POST'}).then(()=>location.href='/client/login')">Logout</button>
-  <script>
-  async function load() {
-    const me = await fetch('/api/client/me').then(r=>r.json());
-    document.getElementById('credits').textContent = 'Creditos: ' + (me.credits_remaining ?? me.credits ?? 0);
-    const leads = await fetch('/api/client/leads').then(r=>r.json());
-    document.getElementById('leads').textContent = JSON.stringify(leads.leads || leads.items || []);
-    const reps = await fetch('/api/client/reports').then(r=>r.json());
-    const div = document.getElementById('reports');
-    div.innerHTML = '';
-    (reps.reports || reps.items || []).forEach(r => {
-      const a = document.createElement('a');
-      a.href = '/api/client/reports/' + r.id + '/download';
-      a.textContent = r.subject || r.id;
-      div.appendChild(a);
-      div.appendChild(document.createElement('br'));
-    });
-  }
-  load();
-  </script>
-  </body></html>`);
+  return c.html(clientPanelView());
 });
 
 export default clientApi;
